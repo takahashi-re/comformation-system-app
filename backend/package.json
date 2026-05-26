@@ -1,30 +1,34 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "Express API for scout document workflow",
-  "main": "dist/index.js",
+  "description": "NestJS API for scout document workflow",
+  "main": "dist/main.js",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "tsx watch src/main.ts",
     "build": "rm -rf dist && tsc -p tsconfig.json",
-    "start": "node dist/index.js",
-    "test": "vitest run"
+    "start": "node dist/main.js"
   },
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "pg": "^8.21.0"
+    "@nestjs/common": "^11.1.6",
+    "@nestjs/core": "^11.1.6",
+    "@nestjs/platform-express": "^11.1.6",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "helmet": "^8.1.0",
+    "pg": "^8.21.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
+    "@types/express": "^5.0.5",
     "@types/node": "^25.9.1",
     "@types/pg": "^8.20.0",
-    "@types/supertest": "^7.2.0",
-    "supertest": "^7.2.2",
     "tsx": "^4.22.3",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.7"
+    "typescript": "^6.0.3"
   }
 }
