@@ -5,8 +5,9 @@
 ## 技術スタック
 
 - Frontend: Vue 3 + TypeScript + Vite
-- Backend: TypeScript + Express
+- Backend: Node.js + NestJS
 - Database: PostgreSQL (`pg`)
+- Development Support: GitHub Copilot
 - Environment: Docker Compose
 
 ## 主な機能
@@ -17,6 +18,12 @@
 - コメント付きの差戻し
 
 ## 起動方法
+
+### 初回セットアップ
+
+```bash
+cp .env.example .env
+```
 
 ### Docker を使う場合
 
@@ -30,21 +37,21 @@ docker compose up --build
 
 ### ローカル実行
 
-1. PostgreSQL を起動して `DATABASE_URL` を設定する
-2. backend を起動する
-3. frontend を起動する
+Docker 運用のみを想定しています。ローカルの `npm install` は不要です。
 
 ```bash
-cp .env.example .env
-npm --prefix backend install
-npm --prefix frontend install
-npm run dev:backend
-npm run dev:frontend
+docker compose up --build
 ```
+
+## GitHub Copilot の利用
+
+VS Code で次の拡張を有効にすると、実装・補完・チャットによる開発支援を利用できます。
+
+- GitHub Copilot
+- GitHub Copilot Chat
 
 ## テストとビルド
 
 ```bash
-npm test
-npm run build
+docker compose build
 ```

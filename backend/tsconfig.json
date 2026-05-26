@@ -5,6 +5,8 @@
     "moduleResolution": "Node",
     "ignoreDeprecations": "6.0",
     "strict": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
