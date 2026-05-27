@@ -43,10 +43,10 @@ ON CONFLICT (genre_id, position_id) DO NOTHING;
 -- =====================================
 -- Employees
 -- =====================================
-INSERT INTO EMPLOYEES (employee_id, name, password_hash, position_id, created_at, updated_at) VALUES
-  (1, 'Taro Yamada', 'hash_admin_001', 3, NOW(), NOW()),
-  (2, 'Hanako Sato', 'hash_leader_001', 2, NOW(), NOW()),
-  (3, 'Ken Suzuki', 'hash_member_001', 1, NOW(), NOW())
+INSERT INTO EMPLOYEES (employee_id, name, password, position_id, created_at, updated_at) VALUES
+  (1, 'Taro Yamada', 'admin_001', 3, NOW(), NOW()),
+  (2, 'Hanako Sato', 'leader_001', 2, NOW(), NOW()),
+  (3, 'Ken Suzuki', 'member_001', 1, NOW(), NOW())
 ON CONFLICT (employee_id) DO NOTHING;
 
 -- =====================================
