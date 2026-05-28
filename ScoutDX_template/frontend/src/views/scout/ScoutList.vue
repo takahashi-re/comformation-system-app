@@ -1,95 +1,98 @@
 <template>
-  <div class="page">
-
-    <!-- タイトル -->
-    <h1>スカウト文一覧（営業担当）</h1>
+  <div class="container">
+    <h1 class="title">スカウト文一覧</h1>
 
     <div class="main">
-
-      <!-- 左：一覧 -->
+      <!-- 左側：一覧 -->
       <div class="list-area">
-        <h3>スカウト文一覧（{{ scoutList.length }}件）</h3>
+        <h3>スカウト文一覧（表示件数：{{ store.scouts.length }}件）</h3>
 
         <table>
           <thead>
             <tr>
-              <th>内容</th>
+              <th>概要</th>
               <th>操作</th>
             </tr>
           </thead>
 
           <tbody>
-            <tr v-for="item in scoutList" :key="item.id">
-              <td>{{ item.text }}</td>
+            <tr
+              v-for="item in store.scouts"
+              :key="item.id"
+              :class="getRowClass(item.status)"
+            >
               <td>
-                <button @click="goDetail(item.id)">詳細</button>
-                <button @click="goEdit(item.id)">編集</button>
+                スカウト文（{{ item.creator }}）
+                タイトル：{{ item.title }}
+                ステータス：{{ item.status }}
+              </td>
+
+              <td>
+                <button @click="detail(item)">詳細</button>
+                <button v-if="canEdit(item.status)">編集</button>
               </td>
             </tr>
           </tbody>
         </table>
+
+        <button class="create-btn" @click="add">
+          新規作成
+        </button>
       </div>
 
-      <!-- 右：フィルタ -->
+      <!-- 右側：フィルタ -->
       <div class="filter-area">
         <h3>filter選択</h3>
-        <input v-model="filters.keyword" placeholder="キーワード" />
+        <p>（フィルター条件を選択）</p>
 
         <h3>表示内容選択</h3>
-        <select v-model="filters.status">
-          <option value="">すべて</option>
-          <option value="通常">通常</option>
-          <option value="差し戻し">差し戻し</option>
-          <option value="承認済み">承認済み</option>
-        </select>
-
-        <button @click="search">検索</button>
+        <p>（表示内容を選択）</p>
       </div>
-
     </div>
-
-    <!-- 下：ボタン -->
-    <div class="footer">
-      <button @click="goCreate">新規作成</button>
-    </div>
-
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted } from "vue"
+import { useScoutStore } from "../../store/scoutListStore"
 
-const scoutList = ref([
-  { id: 1, text: 'スカウト文①' },
-  { id: 2, text: 'スカウト文②' },
-  { id: 3, text: 'スカウト文③' }
-])
+const store = useScoutStore()
 
-const filters = ref({
-  keyword: '',
-  status: ''
+onMounted(() => {
+  store.fetchList()
 })
 
-const search = () => {
-  console.log('検索実行', filters.value)
+const add = () => {
+  store.addScout()
 }
 
-const goDetail = (id) => {
-  console.log('詳細', id)
+const detail = (item) => {
+  console.log("詳細", item)
 }
 
-const goEdit = (id) => {
-  console.log('編集', id)
+// 編集できる条件
+const canEdit = (status) => {
+  return status === "差戻し"
 }
 
-const goCreate = () => {
-  console.log('新規作成')
+// 行ごとの色
+const getRowClass = (status) => {
+  if (status === "差戻し") return "warn"
+  if (status === "承認済") return "success"
+  return ""
 }
 </script>
 
 <style scoped>
-.page {
+.container {
   padding: 20px;
+  font-family: Arial;
+}
+
+.title {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
 }
 
 .main {
@@ -99,7 +102,7 @@ const goCreate = () => {
 
 /* 左 */
 .list-area {
-  flex: 1;
+  flex: 3;
 }
 
 table {
@@ -107,20 +110,42 @@ table {
   border-collapse: collapse;
 }
 
-th, td {
+th {
+  background: #3b6ea5;
+  color: white;
+  padding: 8px;
+}
+
+td {
   border: 1px solid #ccc;
   padding: 8px;
 }
 
+/* 行カラー */
+.warn {
+  background: #fff3cd;
+}
+
+.success {
+  background: #d4edda;
+}
+
 /* 右 */
 .filter-area {
-  width: 250px;
+  flex: 1;
   border: 1px solid #ccc;
   padding: 10px;
 }
 
-/* 下 */
-.footer {
-  margin-top: 20px;
+/* ボタン */
+button {
+  margin-right: 5px;
+}
+
+.create-btn {
+  margin-top: 10px;
+  padding: 10px;
+  background: #3b6ea5;
+  color: white;
 }
 </style>
