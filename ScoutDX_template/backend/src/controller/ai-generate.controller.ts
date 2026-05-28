@@ -34,7 +34,8 @@ export class AiGenerateController {
   }
 
   @Post('generate')
-  generateFromForm(@Body() body: GenerateRequest) {
-    return this.aiGenerateService.generateFromForm(body);
+  async generateFromForm(@Body() body: GenerateRequest) {
+    const result = await this.aiGenerateService.generateFromForm(body);
+    return { body: result.body, scoutId: result.scoutId };
   }
 }

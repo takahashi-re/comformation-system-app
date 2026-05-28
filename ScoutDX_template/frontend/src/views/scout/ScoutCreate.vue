@@ -29,6 +29,7 @@ interface ScoutGenerateRequest {
 
 interface ScoutGenerateResponse {
   body: string
+  scoutId: string
 }
 
 const router = useRouter()
@@ -162,7 +163,8 @@ const handleCreateScout = async () => {
     const data: ScoutGenerateResponse = await response.json()
     sessionStorage.setItem('generatedScoutMessage', data.body)
     window.alert('スカウト文を生成しました')
-    router.push('/scout/edit')
+    router.push(`/scout/${data.scoutId}/edit`)
+    
   } catch (error) {
     console.error('スカウト文生成エラー:', error)
     window.alert('スカウト文の生成に失敗しました。もう一度お試しください。')
