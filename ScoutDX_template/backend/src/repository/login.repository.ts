@@ -16,9 +16,9 @@ export class LoginRepository {
   ): Promise<EmployeeLoginRow | null> {
     const rows = await this.dataSource.query(
       `
-        SELECT employee_id::text AS employee_id, position_id
+        SELECT employee_id, position_id
         FROM EMPLOYEES
-        WHERE employee_id::text = $1 AND password = $2
+        WHERE employee_id = $1 AND password = $2
         LIMIT 1
       `,
       [employeeId, password],

@@ -4,21 +4,11 @@
     <form @submit.prevent="handleLogin">
       <div>
         <label for="employee_id">社員ID</label>
-        <input
-          id="employee_id"
-          v-model="employeeId"
-          type="text"
-          placeholder="例: 0001"
-        />
+        <input id="employee_id" v-model="employeeId" type="text" />
       </div>
       <div>
         <label for="password">パスワード</label>
-        <input
-          id="password"
-          v-model="password"
-          type="password"
-          placeholder="••••••••"
-        />
+        <input id="password" v-model="password" type="password" />
       </div>
       <button type="submit">ログイン</button>
       <p v-if="store.error" class="message">{{ store.error }}</p>
@@ -37,7 +27,7 @@ const store = useLoginStore();
 const handleLogin = async () => {
   const ok = await store.login(employeeId.value, password.value);
   if (ok) {
-    window.location.href = "/";
+    router.push("/");
   }
 };
 </script>
