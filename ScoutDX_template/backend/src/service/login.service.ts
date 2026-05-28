@@ -20,9 +20,9 @@ export class LoginService {
       throw new BadRequestException("employee_id と password は必須です");
     }
 
-    if (!/^\d+$/.test(rawEmployeeId)) {
+    if (!/^[A-Za-z]\d{4}$/.test(rawEmployeeId)) {
       throw new BadRequestException(
-        "employee_id は数値文字列で指定してください",
+        "employee_id は H0001 の形式で指定してください",
       );
     }
 
@@ -39,7 +39,7 @@ export class LoginService {
 
     const token = this.generateToken();
     const session: LoginSession = {
-      employee_id: String(employee.employee_id),
+      employee_id: employee.employee_id,
       position_id:
         employee.position_id !== null ? Number(employee.position_id) : null,
     };
