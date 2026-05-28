@@ -5,7 +5,7 @@
     <div class="section">
       <h3>差戻しコメント</h3>
       <div class="comment-box">
-        {{ comment || 'コメントはありません' }}
+        {{ comment || "コメントはありません" }}
       </div>
     </div>
 
@@ -15,43 +15,44 @@
       <textarea
         v-model="text"
         class="textarea"
-        placeholder="スカウト文を入力してください">
+        placeholder="スカウト文を入力してください"
+      >
       </textarea>
     </div>
 
     <!-- ボタン -->
     <div class="actions">
-      <button class="btn save" @click="onSave">
-        保存
-      </button>
+      <button class="btn save" @click="onSave">保存</button>
 
-      <button class="btn submit" @click="onSubmit">
-        申請
-      </button>
+      <button class="btn submit" @click="onSubmit">申請</button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from "vue";
+import { useRoute } from "vue-router";
+
+const route = useRoute();
+const scoutId = route.params.id;
 
 // ダミーデータ（APIから取得する想定）
-const comment = ref('文章が具体的でないため差戻しします。')
-const text = ref('')
+const comment = ref("文章が具体的でないため差戻しします。");
+const text = ref("");
 
 // 保存処理
 const onSave = () => {
-  console.log('保存:', text.value)
-}
+  console.log("保存:", text.value);
+};
 
 // 申請処理
 const onSubmit = () => {
   if (!text.value) {
-    alert('スカウト文を入力してください')
-    return
+    alert("スカウト文を入力してください");
+    return;
   }
-  console.log('申請:', text.value)
-}
+  console.log("申請:", text.value);
+};
 </script>
 
 <style scoped>
