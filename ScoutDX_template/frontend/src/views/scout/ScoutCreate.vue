@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 
 // 求人情報
 interface JobInfo {
@@ -29,12 +28,12 @@ interface ScoutCreateRequest {
 }
 
 // スカウト文作成レスポンス
-interface ScoutCreateResponse {
-  scoutId: string
-  content: string
-  status: string
-  createdAt: string
-}
+// interface ScoutCreateResponse {
+//   scoutId: string
+//   content: string
+//   status: string
+//   createdAt: string
+// }
 
 const router = useRouter()
 
@@ -57,7 +56,7 @@ const applicantInfo = reactive<ApplicantInfo>({
 })
 
 // ローディング状態
-const isLoading = ref(false)
+// const isLoading = ref(false)
 const isGenerating = ref(false)
 
 // バリデーションエラー
@@ -138,7 +137,7 @@ const validateForm = (): boolean => {
 const handleCreateScout = async () => {
   // バリデーション
   if (!validateForm()) {
-    ElMessage.error('入力内容に誤りがあります')
+    window.alert('入力内容に誤りがあります')
     return
   }
 
@@ -164,19 +163,16 @@ const handleCreateScout = async () => {
       throw new Error('スカウト文の生成に失敗しました')
     }
 
-    const data = await response.json()
+    await response.json()
 
-    ElMessage.success('スカウト文を生成しました')
+    window.alert('スカウト文を生成しました')
 
-    // 生成結果画面へ遷移（スカウト文IDを渡す）
-    router.push({
-      name: 'ScoutPreview',
-      params: { id: data.scoutId }
-    })
+    // 一覧画面へ戻る
+    handleBack()
 
   } catch (error) {
     console.error('スカウト文生成エラー:', error)
-    ElMessage.error('スカウト文の生成に失敗しました。もう一度お試しください。')
+    window.alert('スカウト文の生成に失敗しました。もう一度お試しください。')
   } finally {
     isGenerating.value = false
   }
