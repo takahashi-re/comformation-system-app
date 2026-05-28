@@ -31,4 +31,32 @@ export class ScoutRepository {
     if (rows.length === 0) throw new Error('Scout not found after insert');
     return rows[0];
   }
+
+
+  
+  async findById(id: string) {
+    const rows = await this.repository.query(
+      `SELECT * FROM scouts WHERE id = $1`,
+      [id]
+    );
+    return rows[0];
+  }
+
+  async updateScout(id: string, body: string, status: string) {
+    await this.repository.query(
+      `UPDATE scouts SET body = $1, status = $2 WHERE id = $3`,
+      [body, status, id]
+    );
+    const rows = await this.repository.query(
+      `SELECT * FROM scouts WHERE id = $1`,
+      [id]
+    );
+    return rows[0];
+  }
+
+  async findLatestRejectCommentByScoutId(id: string) {
+    // 差戻しコメントの取得ロジック（例: commentsテーブルから最新1件取得）
+    // 必要に応じて実装
+    return '';
+  }
 }
