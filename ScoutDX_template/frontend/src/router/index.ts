@@ -7,7 +7,7 @@ import Login from "../views/auth/Login.vue";
 import ScoutCreate from "../views/scout/ScoutCreate.vue";
 import ScoutDetail from "../views/scout/ScoutDetail.vue";
 import ScoutEdit from "../views/scout/ScoutEdit.vue";
-import ScoutListSales from "../views/scout/ScoutListSales.vue";
+import ScoutList from "../views/scout/ScoutListSales.vue";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -35,9 +35,9 @@ const routes: RouteRecordRaw[] = [
     component: ScoutEdit,
   },
   {
-    path: "/scout/list-sales",
-    name: "scout-list-sales",
-    component: ScoutListSales,
+    path: "/scout/list",
+    name: "scout-list",
+    component: ScoutList,
   },
 ];
 
