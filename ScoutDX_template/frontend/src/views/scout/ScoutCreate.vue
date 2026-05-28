@@ -52,7 +52,7 @@ const isGenerating = ref(false)
 // バリデーションエラー
 const errors = reactive<Record<string, string>>({})
 
-// 性別選択肢
+// 性別選択
 const genderOptions = [
   { label: '男性', value: 'male' },
   { label: '女性', value: 'female' },
