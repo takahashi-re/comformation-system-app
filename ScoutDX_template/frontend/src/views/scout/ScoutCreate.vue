@@ -148,6 +148,8 @@ const handleCreateScout = async () => {
       textStyle: textStyle.value
     }
 
+    console.log(1)
+
     const response = await fetch('/api/ai/generate', {
       method: 'POST',
       headers: {
@@ -156,9 +158,13 @@ const handleCreateScout = async () => {
       body: JSON.stringify(requestData)
     })
 
+    console.log(2)
+
     if (!response.ok) {
       throw new Error('スカウト文の生成に失敗しました')
     }
+
+    console.log(3)
 
     const data: ScoutGenerateResponse = await response.json()
     sessionStorage.setItem('generatedScoutMessage', data.body)
