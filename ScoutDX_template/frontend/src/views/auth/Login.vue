@@ -18,11 +18,13 @@
 
 <script setup>
 import { ref } from "vue";
-import { useLoginStore } from "../store/login.Store";
+import { useLoginStore } from "../../store/login.Store";
+import { useRouter } from "vue-router";
 
 const employeeId = ref("");
 const password = ref("");
 const store = useLoginStore();
+const router = useRouter();
 
 const handleLogin = async () => {
   const ok = await store.login(employeeId.value, password.value);
