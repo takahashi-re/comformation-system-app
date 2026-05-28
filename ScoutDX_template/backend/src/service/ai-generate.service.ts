@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ScoutRepository } from '../repository/scout.repository';
-import { ScoutEntity } from '../type/scout';
+import { ScoutMessageRepository } from '../repository/scout-message.repository';
 
 interface JobInfo {
   companyName: string;
@@ -45,7 +44,7 @@ export class AiGenerateService {
 まずは30分ほどオンラインでご説明させていただければと思います。ご興味をお持ちいただけましたら、お気軽にご返信ください。`,
   ];
 
-  constructor(private readonly scoutRepository: ScoutRepository) {}
+  constructor(private readonly scoutMessageRepository: ScoutMessageRepository) {}
 
   getSample(): { body: string } {
     const index = Math.floor(Math.random() * this.samples.length);
@@ -86,15 +85,8 @@ export class AiGenerateService {
       '少しでもご興味をお持ちいただけましたら、ぜひ一度カジュアルにお話しできれば幸いです。' +
       instruction;
 
-    const scout = new ScoutEntity();
-    scout.id = Math.random().toString(36).substring(2, 9).toUpperCase();
-    scout.creator = 'system'; // Replace with actual creator if available
-    scout.title = input.jobInfo.jobTitle;
-    scout.body = body;
-    scout.status = 'DRAFT';
+    const savedScoutId = await this.scoutMessageRepository.saveGeneratedMessage(body);
 
-    const savedScout = await this.scoutRepository.save(scout);
-
-    return { body, scoutId: savedScout.id };
+    return { body, scoutId: String(savedScoutId) };
   }
 }
