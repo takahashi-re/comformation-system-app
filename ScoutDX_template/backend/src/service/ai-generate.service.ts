@@ -1,5 +1,28 @@
 import { Injectable } from '@nestjs/common';
 
+interface JobInfo {
+  companyName: string;
+  jobTitle: string;
+  businessContent: string;
+  requiredSkills: string;
+  location: string;
+  salary: number;
+  appealPoints: string;
+}
+
+interface ApplicantInfo {
+  gender: string;
+  age: number | null;
+  desiredJobTitle: string;
+  aiInstructions: string;
+}
+
+interface GenerateRequest {
+  jobInfo: JobInfo;
+  applicantInfo: ApplicantInfo;
+  textStyle?: string;
+}
+
 @Injectable()
 export class AiGenerateService {
   private readonly samples = [
@@ -23,5 +46,42 @@ export class AiGenerateService {
   getSample(): { body: string } {
     const index = Math.floor(Math.random() * this.samples.length);
     return { body: this.samples[index] };
+  }
+
+  generateFromForm(input: GenerateRequest): { body: string } {
+    const genderLabel =
+      input.applicantInfo.gender === 'male'
+        ? '男性'
+        : input.applicantInfo.gender === 'female'
+          ? '女性'
+          : '不問';
+
+    const ageLabel =
+      input.applicantInfo.age === null
+        ? '年齢不問'
+        : `${input.applicantInfo.age}歳`;
+
+    const desiredJob =
+      input.applicantInfo.desiredJobTitle || 'ご経験に合うポジション';
+
+    const style = input.textStyle?.trim() || '指定なし';
+
+    const instruction = input.applicantInfo.aiInstructions?.trim()
+      ? `\n\n補足（人物像）: ${input.applicantInfo.aiInstructions.trim()}`
+      : '';
+
+    const body =
+      `はじめまして。${input.jobInfo.companyName}の採用担当です。\n\n` +
+      `${desiredJob}にご関心をお持ちの方へ、当社の「${input.jobInfo.jobTitle}」ポジションをご紹介します。\n` +
+      `勤務地は${input.jobInfo.location}、想定給与は${input.jobInfo.salary}です。\n\n` +
+      `【業務内容】\n${input.jobInfo.businessContent}\n\n` +
+      `【必須スキル】\n${input.jobInfo.requiredSkills}\n\n` +
+      `【この求人の魅力】\n${input.jobInfo.appealPoints}\n\n` +
+      `対象イメージ: ${genderLabel} / ${ageLabel}\n` +
+      `文体指定: ${style}\n\n` +
+      '少しでもご興味をお持ちいただけましたら、ぜひ一度カジュアルにお話しできれば幸いです。' +
+      instruction;
+
+    return { body };
   }
 }
