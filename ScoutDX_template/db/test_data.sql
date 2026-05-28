@@ -44,9 +44,9 @@ ON CONFLICT (genre_id, position_id) DO NOTHING;
 -- Employees
 -- =====================================
 INSERT INTO EMPLOYEES (employee_id, name, password, position_id, created_at, updated_at) VALUES
-  (1, 'Taro Yamada', 'admin_001', 3, NOW(), NOW()),
-  (2, 'Hanako Sato', 'leader_001', 2, NOW(), NOW()),
-  (3, 'Ken Suzuki', 'member_001', 1, NOW(), NOW())
+  ('H0001', 'Taro Yamada', 'admin_001', 3, NOW(), NOW()),
+  ('H0002', 'Hanako Sato', 'leader_001', 2, NOW(), NOW()),
+  ('H0003', 'Ken Suzuki', 'member_001', 1, NOW(), NOW())
 ON CONFLICT (employee_id) DO NOTHING;
 
 -- =====================================
@@ -127,8 +127,8 @@ INSERT INTO SCOUT_MESSAGES (
     NOW(),
     1,
     1,
-    2,
-    2,
+    'H0002',
+    'H0002',
     'SENT',
     NOW(),
     NOW()
@@ -139,8 +139,8 @@ INSERT INTO SCOUT_MESSAGES (
     NOW(),
     2,
     2,
-    3,
-    3,
+    'H0003',
+    'H0003',
     'DRAFT',
     NOW(),
     NOW()
@@ -161,7 +161,7 @@ INSERT INTO SCOUT_MESSAGE_HISTORIES (
     1,
     'Your backend experience matches our API platform team. We would love to talk.',
     'Looks good overall, but clarify project scope and expected responsibilities.',
-    1,
+    'H0001',
     NOW(),
     NOW()
   ),
@@ -170,7 +170,7 @@ INSERT INTO SCOUT_MESSAGE_HISTORIES (
     2,
     'Your Vue experience is a great fit for our product frontend roadmap.',
     'Please make the tone more specific and less generic.',
-    2,
+    'H0002',
     NOW(),
     NOW()
   )
