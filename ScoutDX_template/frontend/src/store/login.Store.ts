@@ -15,6 +15,12 @@ export const useLoginStore = defineStore("login", () => {
   const user = ref<LoginUser | null>(getUser());
   const error = ref<string>("");
   const isLoggedIn = computed(() => access_token.value.length > 0);
+  const userName = computed(() => {
+    if (!user.value) {
+      return "";
+    }
+    return user.value.name;
+  });
 
   const login = async (
     employee_id: string,
