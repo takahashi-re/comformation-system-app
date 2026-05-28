@@ -30,6 +30,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRoute } from "vue-router";
+import { fetchScoutDetail, updateScout } from "../../api/scoutApi";
+
 const route = useRoute();
 const scoutId = route.params.id;
 
