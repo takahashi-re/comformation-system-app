@@ -3,7 +3,7 @@ import {
   createWebHistory,
   type RouteRecordRaw,
 } from "vue-router";
-import Login from "../views/login.vue";
+import Login from "../views/auth/Login.vue";
 
 const routes: RouteRecordRaw[] = [
   {
