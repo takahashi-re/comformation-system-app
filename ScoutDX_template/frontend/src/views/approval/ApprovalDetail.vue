@@ -79,9 +79,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { fetchScoutDetail, updateScout, approveScout } from '../../api/scoutApi'
 
 const route = useRoute()
+const router = useRouter()
 
 const id = route.params.id
 
@@ -116,13 +118,35 @@ onMounted(async () => {
   }
 })
 
-/* 承認 */
-const approve = async () => {
-  await fetch(`/api/scout/${id}/approve`, {
-    method: 'POST'
-  })
 
-  alert('承認しました')
+/* 承認 */ //承認者が営業承認者か、管理者かで、ステータス変更が変わる。
+const approve = async () => {
+  const approverEmployeeId =
+    JSON.parse(localStorage.getItem('user') || '{}')?.employee_id || ''
+
+  if (!approverEmployeeId) {
+    alert('承認者IDが取得できません')
+    return
+  }
+
+  const reasonKeys = Object.entries(reasons.value)
+    .filter(([, checked]) => checked)
+    .map(([key]) => key)
+
+  try {
+    await approveScout({
+      id: String(id),
+      approverEmployeeId,
+      comment: comment.value.trim(),
+      reasonKeys
+    })
+
+    alert('承認しました')
+    router.push('/scout/list')
+  } catch (e) {
+    console.error('承認エラー', e)
+    alert('承認に失敗しました')
+  }
 }
 
 /* 差戻し */
@@ -144,6 +168,9 @@ const reject = async () => {
   })
 
   alert('差戻しました')
+
+  // 一覧へ戻る（図の最後）
+  router.push('/scout/list')
 }
 </script>
 

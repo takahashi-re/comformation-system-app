@@ -26,6 +26,19 @@ export class ScoutController {
     return this.scoutService.update(id, body);
   }
 
+  @Post(':id/approve')
+approve(
+  @Param('id') id: string,
+  @Body()
+  body: {
+    approverEmployeeId: string
+    comment: string
+    reasonKeys: string[]
+  },
+) {
+  return this.scoutService.approveByRole(id, body)
+}
+
 }
 
  

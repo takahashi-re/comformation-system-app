@@ -14,6 +14,8 @@ import ScoutCreate from "../views/scout/ScoutCreate.vue";
 import ScoutDetail from "../views/scout/ScoutDetail.vue";
 import ScoutEdit from "../views/scout/ScoutEdit.vue";
 import ScoutList from "../views/scout/ScoutList.vue";
+import ApprovalDetail from "../views/approval/ApprovalDetail.vue";
+
 import { getToken } from "../api/loginApi";
 
 const routes: RouteRecordRaw[] = [
@@ -78,6 +80,12 @@ const routes: RouteRecordRaw[] = [
     path: "/auth/change-password",
     name: "change-password",
     component: ChangePassword,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/approval/:id",
+    name: "approval-detail",
+    component: ApprovalDetail,
     meta: { requiresAuth: true },
   },
 ];
