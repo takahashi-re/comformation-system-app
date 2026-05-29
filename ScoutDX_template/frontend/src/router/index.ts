@@ -16,26 +16,9 @@ import ScoutEdit from "../views/scout/ScoutEdit.vue";
 import ScoutList from "../views/scout/ScoutList.vue";
 import ApprovalDetail from "../views/approval/ApprovalDetail.vue";
 import AIConfig from "../views/setting/AIConfig.vue";
-import { getToken, getUser } from "../api/loginApi";
+import { clearLogin, getToken } from "../api/loginApi";
 
-type AppRole = "sales" | "approver" | "admin";
-
-const toRole = (positionId: number | null | undefined): AppRole => {
-  if (positionId === 3) {
-    return "admin";
-  }
-  if (positionId === 2) {
-    return "approver";
-  }
-  return "sales";
-};
-
-const getHomePath = (role: AppRole): string => {
-  if (role === "admin") {
-    return "/admin/users";
-  }
-  return "/scout/list";
-};
+const getHomePath = () => "/scout/list";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -78,6 +61,7 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, roles: ["approver", "admin"] },
   },
   {
+    // AI設定画面（NGワード・最大文字数設定）
     path: "/conditions",
     name: "conditions",
     component: AIConfig,
@@ -122,24 +106,19 @@ export const router = createRouter({
 
 router.beforeEach((to: RouteLocationNormalized) => {
   const isLoggedIn = Boolean(getToken());
-  const role = toRole(getUser()?.position_id);
 
   if (to.path === "/" && isLoggedIn) {
-    return getHomePath(role);
+    return getHomePath();
   }
 
-  if (to.path === "/login" && isLoggedIn) {
-    return getHomePath(role);
+  if (to.path === "/login") {
+    // /login へ来た場合は強制ログアウトするが、遷移自体は許可する
+    clearLogin();
+    return true;
   }
 
   if (to.meta.requiresAuth && !isLoggedIn) {
     return "/login";
   }
-
-  const allowedRoles = to.meta.roles as AppRole[] | undefined;
-  if (allowedRoles && !allowedRoles.includes(role)) {
-    return getHomePath(role);
-  }
-
   return true;
 });

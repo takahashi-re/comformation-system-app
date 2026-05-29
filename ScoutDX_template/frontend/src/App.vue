@@ -3,7 +3,12 @@
     <header v-if="showHeader" class="app-header">
       <nav class="app-nav">
         <RouterLink to="/scout/list" class="nav-link">scout文一覧</RouterLink>
-        <RouterLink to="/admin/users" class="nav-link">従業員一覧</RouterLink>
+        <RouterLink
+          to="/admin/users"
+          class="nav-link"
+          v-if="userPositionId === 3"
+          >従業員一覧</RouterLink
+        >
         <span class="user-name">ユーザー名: {{ userName }}</span>
         <RouterLink to="/auth/change-password" class="nav-link"
           >パスワード変更</RouterLink
@@ -35,6 +40,7 @@ const showHeader = computed(
 const userName = computed(
   () => loginStore.user?.name ?? loginStore.user?.employee_id ?? "",
 );
+const userPositionId = computed(() => loginStore.user?.position_id ?? 0);
 
 const handleLogout = (): void => {
   loginStore.logout();
