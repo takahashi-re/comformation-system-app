@@ -20,36 +20,47 @@
             :key="scout.id"
             :class="getRowClass(scout.statusLabel)"
           >
+            <!-- 概要 -->
             <td>
-              <span v-if="selectedColumns.includes('company')">
-                会社名：{{ scout.company }}
-              </span>
-
-              <span v-if="selectedColumns.includes('job')">
-                {{ selectedColumns.includes('company') ? '、' : '' }}職種：{{ scout.job }}
-              </span>
-
-              <span v-if="selectedColumns.includes('status')">
-                {{ selectedColumns.includes('company') || selectedColumns.includes('job') ? '、' : '' }}ステータス：{{ scout.statusLabel }}
-              </span>
+              {{ formattedSummary(scout) }}
             </td>
 
+            <!-- ボタン -->
             <td>
-              <button @click="onDetailClick(scout.id)">詳細</button>
+              <!-- 詳細 -->
+              <button @click="goDetail(scout.id)">詳細</button>
 
+              <!-- 営業 -->
               <button
-                v-if="isEditable(scout.statusLabel)"
-                @click="onEditClick(scout.id)"
+                v-if="role === 'sales' && isEditable(scout.statusLabel)"
+                @click="goEdit(scout.id)"
               >
                 編集
+              </button>
+
+              <!-- 承認者 -->
+              <button
+                v-if="role === 'approver' && scout.status === 'PENDING_APPROVER'"
+                @click="goReview(scout.id)"
+              >
+                承認・差戻し
+              </button>
+
+              <!-- 管理者 -->
+              <button
+                v-if="role === 'admin' && scout.status === 'PENDING_ADMIN'"
+                @click="goReview(scout.id)"
+              >
+                承認・差戻し
               </button>
             </td>
           </tr>
         </tbody>
       </table>
 
-      <div class="footer">
-        <button class="create-btn" @click="onCreateClick">
+      <!-- 営業のみ -->
+      <div class="footer" v-if="role === 'sales'">
+        <button class="create-btn" @click="goCreate">
           新規作成
         </button>
       </div>
@@ -75,20 +86,18 @@
       </div>
 
       <!-- 表示内容選択 -->
-      <div class="box">
+      <div class="box" v-if="role === 'sales' || role === 'approver' || role === 'admin'">
         <div class="box-title">表示内容選択</div>
         <div class="box-body">
           <label>
             <input type="checkbox" value="company" v-model="selectedColumns" />
             会社名
-          </label>
-          <br />
+          </label><br />
 
           <label>
             <input type="checkbox" value="job" v-model="selectedColumns" />
             職種
-          </label>
-          <br />
+          </label><br />
 
           <label>
             <input type="checkbox" value="status" v-model="selectedColumns" />
@@ -101,12 +110,30 @@
           <button @click="clearAll">全解除</button>
         </div>
       </div>
+
+      <!-- 共通：生成文条件編集 -->
+      <div v-if="role !== 'sales'" style="margin-top:20px; text-align:center;">
+        <button class="create-btn" @click="goConditions">
+          生成文条件編集
+        </button>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import { fetchScouts } from "../../api/scoutApi";
+import { getUser } from "../../api/loginApi";
+
+const STATUS_MAP = {
+  DRAFT: "下書き",
+  PENDING_APPROVER: "承認者承認待ち",
+  REJECTED_BY_APPROVER: "承認者差戻し",
+  PENDING_ADMIN: "管理者承認待ち",
+  REJECTED_BY_ADMIN: "管理者差戻し",
+  AVAILABLE: "利用可能",
+  SENT: "送信済み",
+};
 
 export default {
   name: "ScoutList",
@@ -117,6 +144,8 @@ export default {
 
   data() {
     return {
+      positionId: getUser()?.position_id ?? 1,
+
       filterStatus: "",
       selectedColumns: ["company", "job", "status"],
       scouts: [],
@@ -124,9 +153,19 @@ export default {
   },
 
   computed: {
+    // ✅ ロール判定
+    role() {
+      if (this.positionId === 1) return "sales";
+      if (this.positionId === 2) return "approver";
+      if (this.positionId === 3) return "admin";
+      return "";
+    },
+
     filteredScouts() {
       if (!this.filterStatus) return this.scouts;
-      return this.scouts.filter((s) => s.statusLabel === this.filterStatus);
+      return this.scouts.filter(
+        (s) => s.statusLabel === this.filterStatus
+      );
     },
   },
 
@@ -138,54 +177,71 @@ export default {
           id: row.id,
           company: row.company_name || "-",
           job: row.job_title || "-",
-          status: row.status || "",
-          statusLabel: this.toDisplayStatus(row.status),
+          status: row.status,
+          statusLabel: STATUS_MAP[row.status] || "-",
         }));
-      } catch (error) {
-        console.error("スカウト一覧の取得に失敗しました", error);
+      } catch (e) {
+        console.error(e);
         this.scouts = [];
       }
     },
 
-    toDisplayStatus(status) {
-      const statusMap = {
-        DRAFT: "下書き",
-        PENDING_APPROVER: "承認者承認待ち",
-        REJECTED_BY_APPROVER: "承認者差戻し",
-        PENDING_ADMIN: "管理者承認待ち",
-        REJECTED_BY_ADMIN: "管理者差戻し",
-        AVAILABLE: "利用可能",
-        SENT: "送信済み",
-      };
+    // ✅ 表示まとめ
+    formattedSummary(scout) {
+      const parts = [];
 
-      return statusMap[status] || status || "-";
+      if (this.selectedColumns.includes("company")) {
+        parts.push(`会社名：${scout.company}`);
+      }
+      if (this.selectedColumns.includes("job")) {
+        parts.push(`職種：${scout.job}`);
+      }
+      if (this.selectedColumns.includes("status")) {
+        parts.push(`ステータス：${scout.statusLabel}`);
+      }
+
+      return parts.join("、");
     },
 
-    isEditable(statusLabel) {
-      return statusLabel === "承認者差戻し" || statusLabel === "管理者差戻し";
+    isEditable(status) {
+      return ["承認者差戻し", "管理者差戻し"].includes(status);
     },
 
-    onDetailClick(id) {
-      console.log("詳細:", id);
-    },
-    onEditClick(id) {
-      console.log("編集:", id);
-    },
-    onCreateClick() {
-      console.log("新規作成");
-    },
-    getRowClass(statusLabel) {
-      if (statusLabel === "承認者差戻し" || statusLabel === "管理者差戻し") {
+    getRowClass(status) {
+      if (["承認者差戻し", "管理者差戻し"].includes(status)) {
         return "returned";
       }
-      if (statusLabel === "利用可能" || statusLabel === "送信済み") {
+      if (["利用可能", "送信済み"].includes(status)) {
         return "approved";
       }
       return "";
     },
+
+    // ✅ 遷移
+    goDetail(id) {
+      this.$router.push(`/scout/${id}`);
+    },
+
+    goEdit(id) {
+      this.$router.push(`/scout/${id}/edit`);
+    },
+
+    goCreate() {
+      this.$router.push("/scout/create");
+    },
+
+    goReview(id) {
+      this.$router.push(`/review/${id}`);
+    },
+
+    goConditions() {
+      this.$router.push("/conditions");
+    },
+
     selectAll() {
       this.selectedColumns = ["company", "job", "status"];
     },
+
     clearAll() {
       this.selectedColumns = [];
     },
@@ -219,12 +275,10 @@ export default {
 .table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 10px;
 }
 
 .table th {
   background: #bfc9d6;
-  text-align: left;
   padding: 8px;
 }
 
@@ -234,25 +288,20 @@ export default {
 }
 
 .action-col {
-  width: 150px;
-}
-
-button {
-  margin-right: 5px;
+  width: 200px;
 }
 
 .footer {
-  margin-top: 15px;
+  margin-top: 10px;
   text-align: right;
 }
 
 .create-btn {
   background: #3b73a8;
   color: white;
-  padding: 10px 20px;
+  padding: 10px;
 }
 
-/* 行色 */
 .returned {
   background: #efe2c0;
 }
@@ -261,7 +310,6 @@ button {
   background: #cfe3cf;
 }
 
-/* サイドバー */
 .box {
   margin-bottom: 20px;
   border: 1px solid #ccc;
