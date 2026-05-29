@@ -1,3 +1,6 @@
+import axios from "axios";
+import { apiClient } from "./client";
+
 export interface LoginUser {
   employee_id: string;
   name: string;
@@ -18,18 +21,23 @@ export async function loginApi(
     throw new Error("employee_id と password は必須です");
   }
 
-  const res = await fetch("http://localhost:3000/api/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ employee_id, password }),
-  });
-
-  if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.message || "ログインに失敗しました");
+  try {
+    const { data } = await apiClient.post<LoginResponse>("/api/login", {
+      employee_id,
+      password,
+    });
+    return data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      const message =
+        (error.response?.data as { message?: string } | undefined)?.message ||
+        (error.code === "ERR_NETWORK"
+          ? "APIに接続できません。バックエンドが起動しているか確認してください"
+          : "ログインに失敗しました");
+      throw new Error(message);
+    }
+    throw new Error("ログインに失敗しました");
   }
-
-  return (await res.json()) as LoginResponse;
 }
 
 export function saveToken(token: string): void {
