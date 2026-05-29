@@ -18,7 +18,7 @@
           <tr
             v-for="scout in filteredScouts"
             :key="scout.id"
-            :class="getRowClass(scout.status)"
+            :class="getRowClass(scout.statusLabel)"
           >
             <td>
               <span v-if="selectedColumns.includes('company')">
@@ -26,11 +26,11 @@
               </span>
 
               <span v-if="selectedColumns.includes('job')">
-                、職種：{{ scout.job }}
+                {{ selectedColumns.includes('company') ? '、' : '' }}職種：{{ scout.job }}
               </span>
 
               <span v-if="selectedColumns.includes('status')">
-                、ステータス：{{ scout.status }}
+                {{ selectedColumns.includes('company') || selectedColumns.includes('job') ? '、' : '' }}ステータス：{{ scout.statusLabel }}
               </span>
             </td>
 
@@ -38,7 +38,7 @@
               <button @click="onDetailClick(scout.id)">詳細</button>
 
               <button
-                v-if="scout.status === '差し戻し'"
+                v-if="isEditable(scout.statusLabel)"
                 @click="onEditClick(scout.id)"
               >
                 編集
@@ -61,12 +61,15 @@
       <div class="box">
         <div class="box-title">filter選択</div>
         <div class="box-body">
-          <!-- ✅ change削除（これ重要） -->
           <select v-model="filterStatus">
             <option value="">すべて</option>
-            <option value="通常">通常</option>
-            <option value="差し戻し">差し戻し</option>
-            <option value="承認済み">承認済み</option>
+            <option value="下書き">下書き</option>
+            <option value="承認者承認待ち">承認者承認待ち</option>
+            <option value="承認者差戻し">承認者差戻し</option>
+            <option value="管理者承認待ち">管理者承認待ち</option>
+            <option value="管理者差戻し">管理者差戻し</option>
+            <option value="利用可能">利用可能</option>
+            <option value="送信済み">送信済み</option>
           </select>
         </div>
       </div>
@@ -103,34 +106,65 @@
 </template>
 
 <script>
+import { fetchScouts } from "../../api/scoutApi";
+
 export default {
   name: "ScoutList",
 
-  mounted() {
-    console.log("マウントされた")
+  async mounted() {
+    await this.loadScouts();
   },
 
   data() {
     return {
       filterStatus: "",
       selectedColumns: ["company", "job", "status"],
-      scouts: [
-        { id: 1, company: "AAA", job: "エンジニア", status: "通常" },
-        { id: 2, company: "BBB", job: "営業", status: "通常" },
-        { id: 3, company: "CCC", job: "デザイナー", status: "差し戻し" },
-        { id: 4, company: "DDD", job: "マーケ", status: "承認済み" },
-      ],
+      scouts: [],
     };
   },
 
   computed: {
     filteredScouts() {
       if (!this.filterStatus) return this.scouts;
-      return this.scouts.filter(s => s.status === this.filterStatus);
+      return this.scouts.filter((s) => s.statusLabel === this.filterStatus);
     },
   },
 
   methods: {
+    async loadScouts() {
+      try {
+        const rows = await fetchScouts();
+        this.scouts = rows.map((row) => ({
+          id: row.id,
+          company: row.company_name || "-",
+          job: row.job_title || "-",
+          status: row.status || "",
+          statusLabel: this.toDisplayStatus(row.status),
+        }));
+      } catch (error) {
+        console.error("スカウト一覧の取得に失敗しました", error);
+        this.scouts = [];
+      }
+    },
+
+    toDisplayStatus(status) {
+      const statusMap = {
+        DRAFT: "下書き",
+        PENDING_APPROVER: "承認者承認待ち",
+        REJECTED_BY_APPROVER: "承認者差戻し",
+        PENDING_ADMIN: "管理者承認待ち",
+        REJECTED_BY_ADMIN: "管理者差戻し",
+        AVAILABLE: "利用可能",
+        SENT: "送信済み",
+      };
+
+      return statusMap[status] || status || "-";
+    },
+
+    isEditable(statusLabel) {
+      return statusLabel === "承認者差戻し" || statusLabel === "管理者差戻し";
+    },
+
     onDetailClick(id) {
       console.log("詳細:", id);
     },
@@ -140,9 +174,13 @@ export default {
     onCreateClick() {
       console.log("新規作成");
     },
-    getRowClass(status) {
-      if (status === "差し戻し") return "returned";
-      if (status === "承認済み") return "approved";
+    getRowClass(statusLabel) {
+      if (statusLabel === "承認者差戻し" || statusLabel === "管理者差戻し") {
+        return "returned";
+      }
+      if (statusLabel === "利用可能" || statusLabel === "送信済み") {
+        return "approved";
+      }
       return "";
     },
     selectAll() {
@@ -154,7 +192,6 @@ export default {
   },
 };
 </script>
-
 
 <style scoped>
 .container {

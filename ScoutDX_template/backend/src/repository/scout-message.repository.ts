@@ -48,14 +48,17 @@ export class ScoutMessageRepository {
     return this.dataSource.query(
       `
         SELECT
-          scout_message_id::text AS id,
-          created_at,
-          COALESCE(created_by_employee_id, '') AS creator,
+          sm.scout_message_id::text AS id,
+          sm.created_at,
+          COALESCE(sm.created_by_employee_id, '') AS creator,
           '' AS title,
-          COALESCE(message_content, '') AS body,
-          COALESCE(status, 'DRAFT') AS status
-        FROM SCOUT_MESSAGES
-        ORDER BY created_at DESC NULLS LAST, scout_message_id DESC
+          COALESCE(sm.message_content, '') AS body,
+          COALESCE(sm.status, 'DRAFT') AS status,
+          COALESCE(jp.company_name, '') AS company_name,
+          COALESCE(jp.job_title, '') AS job_title
+        FROM SCOUT_MESSAGES sm
+        LEFT JOIN JOB_POSTINGS jp ON jp.job_posting_id = sm.job_posting_id
+        ORDER BY sm.created_at DESC NULLS LAST, sm.scout_message_id DESC
       `,
     );
   }
