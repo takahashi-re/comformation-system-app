@@ -20,12 +20,6 @@ export class LoginService {
       throw new BadRequestException("employee_id と password は必須です");
     }
 
-    if (!/^[A-Za-z]\d{4}$/.test(rawEmployeeId)) {
-      throw new BadRequestException(
-        "employee_id は H0001 の形式で指定してください",
-      );
-    }
-
     const employee = await this.loginRepository.findByEmployeeIdAndPassword(
       rawEmployeeId,
       password,
