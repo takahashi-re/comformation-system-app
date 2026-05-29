@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ScoutMessageRepository } from '../repository/scout-message.repository';
+import { JobPostingRepository } from '../repository/job-posting.repository';
+import { JobSeekerRepository } from '../repository/job-seeker.repository';
 
 interface JobInfo {
   companyName: string;
@@ -44,7 +46,11 @@ export class AiGenerateService {
 まずは30分ほどオンラインでご説明させていただければと思います。ご興味をお持ちいただけましたら、お気軽にご返信ください。`,
   ];
 
-  constructor(private readonly scoutMessageRepository: ScoutMessageRepository) {}
+  constructor(
+    private readonly scoutMessageRepository: ScoutMessageRepository,
+    private readonly jobPostingRepository: JobPostingRepository,
+    private readonly jobSeekerRepository: JobSeekerRepository,
+  ) {}
 
   getSample(): { body: string } {
     const index = Math.floor(Math.random() * this.samples.length);
@@ -52,6 +58,14 @@ export class AiGenerateService {
   }
 
   async generateFromForm(input: GenerateRequest): Promise<{ body: string; scoutId: string }> {
+    if (!input.jobInfo.companyName?.trim() || !input.jobInfo.jobTitle?.trim()) {
+      throw new Error('求人情報の必須項目が不足しています');
+    }
+
+    if (!input.applicantInfo.gender?.trim() || input.applicantInfo.age === null) {
+      throw new Error('求職者情報の必須項目が不足しています');
+    }
+
     const genderLabel =
       input.applicantInfo.gender === 'male'
         ? '男性'
@@ -85,8 +99,30 @@ export class AiGenerateService {
       '少しでもご興味をお持ちいただけましたら、ぜひ一度カジュアルにお話しできれば幸いです。' +
       instruction;
 
-    const savedScoutId = await this.scoutMessageRepository.saveGeneratedMessage(body);
+    const jobPosting = await this.jobPostingRepository.create({
+      company_name: input.jobInfo.companyName.trim(),
+      job_title: input.jobInfo.jobTitle.trim(),
+      job_description: input.jobInfo.businessContent.trim(),
+      min_salary: input.jobInfo.salary,
+      max_salary: input.jobInfo.salary,
+      required_skills: input.jobInfo.requiredSkills.trim(),
+      job_appeal: input.jobInfo.appealPoints.trim(),
+      work_location: input.jobInfo.location.trim(),
+    });
 
-    return { body, scoutId: String(savedScoutId) };
+    const jobSeeker = await this.jobSeekerRepository.create({
+      gender: input.applicantInfo.gender.trim(),
+      age: input.applicantInfo.age,
+      desired_position: input.applicantInfo.desiredJobTitle?.trim() || null,
+    });
+
+    const scoutMessage = await this.scoutMessageRepository.create({
+      message_content: body,
+      job_posting_id: Number(jobPosting.job_posting_id),
+      job_seeker_id: Number(jobSeeker.job_seeker_id),
+      status: 'DRAFT',
+    });
+
+    return { body, scoutId: String(scoutMessage.scout_message_id) };
   }
 }
