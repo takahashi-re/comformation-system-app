@@ -7,6 +7,9 @@ import {
 import Login from "../views/auth/Login.vue";
 import ChangePassword from "../views/auth/ChangePassword.vue";
 import UserList from "../views/admin/UserList.vue";
+import UserDetail from "../views/admin/UserDetail.vue";
+import UserEdit from "../views/admin/UserEdit.vue";
+import UserCreate from "../views/admin/UserCreate.vue";
 import ScoutCreate from "../views/scout/ScoutCreate.vue";
 import ScoutDetail from "../views/scout/ScoutDetail.vue";
 import ScoutEdit from "../views/scout/ScoutEdit.vue";
@@ -51,6 +54,24 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/users",
     name: "user-list",
     component: UserList,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/admin/users/new",
+    name: "user-create",
+    component: UserCreate,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/admin/users/:id",
+    name: "user-detail",
+    component: UserDetail,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/admin/users/:id/edit",
+    name: "user-edit",
+    component: UserEdit,
     meta: { requiresAuth: true },
   },
   {
