@@ -4,6 +4,8 @@ import { AiGenerateController } from "./controller/ai-generate.controller";
 import { LoginController } from "./controller/login.controller";
 import { ScoutController } from "./controller/scout.controller";
 import { LoginRepository } from "./repository/login.repository";
+import { JobPostingRepository } from "./repository/job-posting.repository";
+import { JobSeekerRepository } from "./repository/job-seeker.repository";
 import { ScoutMessageRepository } from "./repository/scout-message.repository";
 import { AiGenerateService } from "./service/ai-generate.service";
 import { LoginService } from "./service/login.service";
@@ -20,6 +22,8 @@ import { ScoutEntity } from "./type/scout";
     AiGenerateService,
     LoginService,
     LoginRepository,
+    JobPostingRepository,
+    JobSeekerRepository,
   ],
 })
 export class ScoutModule {}
