@@ -1,151 +1,242 @@
 <template>
   <div class="container">
-    <h1 class="title">スカウト文一覧</h1>
-
+    <!-- 左メイン -->
     <div class="main">
-      <!-- 左側：一覧 -->
-      <div class="list-area">
-        <h3>スカウト文一覧（表示件数：{{ store.scouts.length }}件）</h3>
+      <div class="title">
+        スカウト文一覧（表示件数: {{ filteredScouts.length }}件）
+      </div>
 
-        <table>
-          <thead>
-            <tr>
-              <th>概要</th>
-              <th>操作</th>
-            </tr>
-          </thead>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>フィルタリング概要</th>
+            <th class="action-col">操作</th>
+          </tr>
+        </thead>
 
-          <tbody>
-            <tr
-              v-for="item in store.scouts"
-              :key="item.id"
-              :class="getRowClass(item.status)"
-            >
-              <td>
-                スカウト文（{{ item.creator }}）
-                タイトル：{{ item.title }}
-                ステータス：{{ item.status }}
-              </td>
+        <tbody>
+          <tr
+            v-for="scout in filteredScouts"
+            :key="scout.id"
+            :class="getRowClass(scout.status)"
+          >
+            <td>
+              <span v-if="selectedColumns.includes('company')">
+                会社名：{{ scout.company }}
+              </span>
 
-              <td>
-                <button @click="detail(item)">詳細</button>
-                <button v-if="canEdit(item.status)">編集</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              <span v-if="selectedColumns.includes('job')">
+                、職種：{{ scout.job }}
+              </span>
 
-        <button class="create-btn" @click="add">
+              <span v-if="selectedColumns.includes('status')">
+                、ステータス：{{ scout.status }}
+              </span>
+            </td>
+
+            <td>
+              <button @click="onDetailClick(scout.id)">詳細</button>
+
+              <button
+                v-if="scout.status === '差し戻し'"
+                @click="onEditClick(scout.id)"
+              >
+                編集
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="footer">
+        <button class="create-btn" @click="onCreateClick">
           新規作成
         </button>
       </div>
+    </div>
 
-      <!-- 右側：フィルタ -->
-      <div class="filter-area">
-        <h3>filter選択</h3>
-        <p>（フィルター条件を選択）</p>
+    <!-- 右サイド -->
+    <div class="sidebar">
+      <!-- filter -->
+      <div class="box">
+        <div class="box-title">filter選択</div>
+        <div class="box-body">
+          <!-- ✅ change削除（これ重要） -->
+          <select v-model="filterStatus">
+            <option value="">すべて</option>
+            <option value="通常">通常</option>
+            <option value="差し戻し">差し戻し</option>
+            <option value="承認済み">承認済み</option>
+          </select>
+        </div>
+      </div>
 
-        <h3>表示内容選択</h3>
-        <p>（表示内容を選択）</p>
+      <!-- 表示内容選択 -->
+      <div class="box">
+        <div class="box-title">表示内容選択</div>
+        <div class="box-body">
+          <label>
+            <input type="checkbox" value="company" v-model="selectedColumns" />
+            会社名
+          </label>
+          <br />
+
+          <label>
+            <input type="checkbox" value="job" v-model="selectedColumns" />
+            職種
+          </label>
+          <br />
+
+          <label>
+            <input type="checkbox" value="status" v-model="selectedColumns" />
+            ステータス
+          </label>
+
+          <hr />
+
+          <button @click="selectAll">全選択</button>
+          <button @click="clearAll">全解除</button>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import { onMounted } from "vue"
-import { useScoutStore } from "../../store/scoutListStore"
+<script>
+export default {
+  name: "ScoutList",
 
-const store = useScoutStore()
+  mounted() {
+    console.log("マウントされた")
+  },
 
-onMounted(() => {
-  store.fetchList()
-})
+  data() {
+    return {
+      filterStatus: "",
+      selectedColumns: ["company", "job", "status"],
+      scouts: [
+        { id: 1, company: "AAA", job: "エンジニア", status: "通常" },
+        { id: 2, company: "BBB", job: "営業", status: "通常" },
+        { id: 3, company: "CCC", job: "デザイナー", status: "差し戻し" },
+        { id: 4, company: "DDD", job: "マーケ", status: "承認済み" },
+      ],
+    };
+  },
 
-const add = () => {
-  store.addScout()
-}
+  computed: {
+    filteredScouts() {
+      if (!this.filterStatus) return this.scouts;
+      return this.scouts.filter(s => s.status === this.filterStatus);
+    },
+  },
 
-const detail = (item) => {
-  console.log("詳細", item)
-}
-
-// 編集できる条件
-const canEdit = (status) => {
-  return status === "差戻し"
-}
-
-// 行ごとの色
-const getRowClass = (status) => {
-  if (status === "差戻し") return "warn"
-  if (status === "承認済") return "success"
-  return ""
-}
+  methods: {
+    onDetailClick(id) {
+      console.log("詳細:", id);
+    },
+    onEditClick(id) {
+      console.log("編集:", id);
+    },
+    onCreateClick() {
+      console.log("新規作成");
+    },
+    getRowClass(status) {
+      if (status === "差し戻し") return "returned";
+      if (status === "承認済み") return "approved";
+      return "";
+    },
+    selectAll() {
+      this.selectedColumns = ["company", "job", "status"];
+    },
+    clearAll() {
+      this.selectedColumns = [];
+    },
+  },
+};
 </script>
+
 
 <style scoped>
 .container {
+  display: flex;
+  gap: 20px;
   padding: 20px;
-  font-family: Arial;
-}
-
-.title {
-  text-align: center;
-  font-size: 24px;
-  margin-bottom: 20px;
+  background: #f5f5f5;
 }
 
 .main {
-  display: flex;
-  gap: 20px;
-}
-
-/* 左 */
-.list-area {
   flex: 3;
 }
 
-table {
+.sidebar {
+  flex: 1;
+}
+
+.title {
+  background: #3b73a8;
+  color: white;
+  padding: 10px;
+  font-weight: bold;
+}
+
+.table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 10px;
 }
 
-th {
-  background: #3b6ea5;
-  color: white;
+.table th {
+  background: #bfc9d6;
+  text-align: left;
   padding: 8px;
 }
 
-td {
-  border: 1px solid #ccc;
+.table td {
   padding: 8px;
+  border-bottom: 1px solid #ccc;
 }
 
-/* 行カラー */
-.warn {
-  background: #fff3cd;
+.action-col {
+  width: 150px;
 }
 
-.success {
-  background: #d4edda;
-}
-
-/* 右 */
-.filter-area {
-  flex: 1;
-  border: 1px solid #ccc;
-  padding: 10px;
-}
-
-/* ボタン */
 button {
   margin-right: 5px;
 }
 
+.footer {
+  margin-top: 15px;
+  text-align: right;
+}
+
 .create-btn {
-  margin-top: 10px;
-  padding: 10px;
-  background: #3b6ea5;
+  background: #3b73a8;
   color: white;
+  padding: 10px 20px;
+}
+
+/* 行色 */
+.returned {
+  background: #efe2c0;
+}
+
+.approved {
+  background: #cfe3cf;
+}
+
+/* サイドバー */
+.box {
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+}
+
+.box-title {
+  background: #3b73a8;
+  color: white;
+  padding: 10px;
+}
+
+.box-body {
+  padding: 10px;
 }
 </style>
