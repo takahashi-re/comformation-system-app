@@ -21,19 +21,16 @@ interface ApplicantInfo {
   aiInstructions: string
 }
 
-// スカウト文作成リクエスト
-interface ScoutCreateRequest {
+interface ScoutGenerateRequest {
   jobInfo: JobInfo
   applicantInfo: ApplicantInfo
+  textStyle: string
 }
 
-// スカウト文作成レスポンス
-// interface ScoutCreateResponse {
-//   scoutId: string
-//   content: string
-//   status: string
-//   createdAt: string
-// }
+interface ScoutGenerateResponse {
+  body: string
+  scoutId: string
+}
 
 const router = useRouter()
 
@@ -58,6 +55,7 @@ const applicantInfo = reactive<ApplicantInfo>({
 // ローディング状態
 // const isLoading = ref(false)
 const isGenerating = ref(false)
+const textStyle = ref('丁寧')
 
 // バリデーションエラー
 const errors = reactive<Record<string, string>>({})
@@ -133,7 +131,7 @@ const validateForm = (): boolean => {
   return Object.keys(errors).length === 0
 }
 
-// スカウト文作成（AI生成）
+// スカウト文作成（バックエンド生成）
 const handleCreateScout = async () => {
   // バリデーション
   if (!validateForm()) {
@@ -144,32 +142,35 @@ const handleCreateScout = async () => {
   try {
     isGenerating.value = true
 
-    // バックエンドAPIへリクエスト
-    const requestData: ScoutCreateRequest = {
+    const requestData: ScoutGenerateRequest = {
       jobInfo,
-      applicantInfo
+      applicantInfo,
+      textStyle: textStyle.value
     }
 
-    const response = await fetch('/api/scout/generate', {
+    console.log(1)
+
+    const response = await fetch('/api/ai/generate', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify(requestData)
     })
+
+    console.log(2)
 
     if (!response.ok) {
       throw new Error('スカウト文の生成に失敗しました')
     }
 
-    await response.json()
+    console.log(3)
 
+    const data: ScoutGenerateResponse = await response.json()
+    sessionStorage.setItem('generatedScoutMessage', data.body)
     window.alert('スカウト文を生成しました')
-
-    // 一覧画面へ戻る
-    handleBack()
-
+    router.push(`/scout/${data.scoutId}/edit`)
+    
   } catch (error) {
     console.error('スカウト文生成エラー:', error)
     window.alert('スカウト文の生成に失敗しました。もう一度お試しください。')
@@ -178,30 +179,14 @@ const handleCreateScout = async () => {
   }
 }
 
-// 一覧画面に戻る
-const handleBack = () => {
-  router.push({ name: 'ScoutList' })
-}
 </script>
 
 <template>
   <div class="scout-create">
-    <!-- ヘッダー -->
-    <header class="page-header">
-      <nav class="header-nav">
-        <router-link to="/scout/list" class="nav-link">スカウト文一覧</router-link>
-        <div class="user-info">
-          <span class="username">{{ 'ユーザー名' }}</span>
-          <router-link to="/logout" class="logout-link">ログアウト</router-link>
-          <router-link to="/password-change" class="password-link">パスワード変更</router-link>
-        </div>
-      </nav>
-    </header>
 
     <!-- メインコンテンツ -->
     <main class="page-content">
-      <h1 class="page-title">求人情報入力（営業担当）</h1>
-      <p class="page-description">スカウト文に必要な求人情報を入力する</p>
+      <h1 class="page-title">求人情報入力</h1>
 
       <form @submit.prevent="handleCreateScout" class="scout-form">
         <!-- 求人情報入力フォーム -->
@@ -395,7 +380,7 @@ const handleBack = () => {
               :class="{ 'is-error': errors.aiInstructions }"
               maxlength="2000"
               rows="4"
-              placeholder="AIへの指示を入力"
+              placeholder="求職者の人物像を入力"
             />
             <span v-if="errors.aiInstructions" class="error-message">
               {{ errors.aiInstructions }}
@@ -409,6 +394,7 @@ const handleBack = () => {
           <input
             type="text"
             class="form-input-alt"
+            v-model="textStyle"
             placeholder="文体を指定"
           />
         </section>

@@ -5,6 +5,7 @@ export interface LoginRequest {
 
 export interface LoginSession {
   employee_id: string;
+  name: string;
   position_id: number | null;
 }
 

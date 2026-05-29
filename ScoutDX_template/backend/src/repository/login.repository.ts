@@ -3,6 +3,7 @@ import { DataSource } from "typeorm";
 
 export interface EmployeeLoginRow {
   employee_id: string;
+  name: string;
   position_id: number | null;
 }
 
@@ -16,7 +17,7 @@ export class LoginRepository {
   ): Promise<EmployeeLoginRow | null> {
     const rows = await this.dataSource.query(
       `
-        SELECT employee_id, position_id
+        SELECT employee_id, name, position_id
         FROM EMPLOYEES
         WHERE employee_id = $1 AND password = $2
         LIMIT 1
