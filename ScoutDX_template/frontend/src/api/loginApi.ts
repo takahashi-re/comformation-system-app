@@ -1,5 +1,6 @@
 export interface LoginUser {
   employee_id: string;
+  name: string;
   position_id: number | null;
 }
 
