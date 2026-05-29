@@ -97,18 +97,40 @@
 
           <!-- 給与単価 -->
           <div class="form-group">
-            <label for="salary" class="form-label required">給与単価</label>
-            <input
-              id="salary"
-              v-model.number="jobInfo.salary"
-              type="number"
-              class="form-input"
-              :class="{ 'is-error': errors.salary }"
-              placeholder="給与単価を入力"
-            />
-            <span v-if="errors.salary" class="error-message">
-              {{ errors.salary }}
-            </span>
+            <label class="form-label required">給与単価</label>
+            <div class="salary-range">
+              <div class="salary-range-item">
+                <input
+                  id="minSalary"
+                  v-model.number="jobInfo.minSalary"
+                  type="number"
+                  step="10000"
+                  class="form-input"
+                  :class="{ 'is-error': errors.minSalary }"
+                  min="0"
+                  placeholder="最小給与を入力"
+                />
+                <span v-if="errors.minSalary" class="error-message">
+                  {{ errors.minSalary }}
+                </span>
+              </div>
+              <span class="salary-range-separator">〜</span>
+              <div class="salary-range-item">
+                <input
+                  id="maxSalary"
+                  v-model.number="jobInfo.maxSalary"
+                  type="number"
+                  step="10000"
+                  class="form-input"
+                  :class="{ 'is-error': errors.maxSalary }"
+                  min="0"
+                  placeholder="最大給与を入力"
+                />
+                <span v-if="errors.maxSalary" class="error-message">
+                  {{ errors.maxSalary }}
+                </span>
+              </div>
+            </div>
           </div>
 
           <!-- 求人の魅力 -->
@@ -212,12 +234,18 @@
         <!-- 文体指定 -->
         <section class="form-section text-style-section">
           <h2 class="section-title-alt">文体指定</h2>
-          <input
-            type="text"
-            class="form-input-alt"
+          <select
+            class="form-select"
             v-model="textStyle"
-            placeholder="文体を指定"
-          />
+          >
+            <option
+              v-for="option in textStyleOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
         </section>
 
         <!-- アクションボタン -->
@@ -248,7 +276,8 @@ interface JobInfo {
   businessContent: string
   requiredSkills: string
   location: string
-  salary: number | null
+  minSalary: number | null
+  maxSalary: number | null
   appealPoints: string
 }
 
@@ -263,7 +292,7 @@ interface ApplicantInfo {
 interface ScoutGenerateRequest {
   jobInfo: JobInfo
   applicantInfo: ApplicantInfo
-  textStyle: string
+  textStyle: 'casual' | 'formal'
 }
 
 interface ScoutGenerateResponse {
@@ -280,7 +309,8 @@ const jobInfo = reactive<JobInfo>({
   businessContent: '',
   requiredSkills: '',
   location: '',
-  salary: null,
+  minSalary: null,
+  maxSalary: null,
   appealPoints: ''
 })
 
@@ -294,7 +324,12 @@ const applicantInfo = reactive<ApplicantInfo>({
 // ローディング状態
 // const isLoading = ref(false)
 const isGenerating = ref(false)
-const textStyle = ref('丁寧')
+const textStyle = ref<'casual' | 'formal'>('formal')
+
+const textStyleOptions = [
+  { label: 'カジュアル', value: 'casual' },
+  { label: 'フォーマル', value: 'formal' }
+]
 
 // バリデーションエラー
 const errors = reactive<Record<string, string>>({})
@@ -342,10 +377,26 @@ const validateForm = (): boolean => {
     errors.location = '勤務地は255文字以内で入力してください'
   }
 
-  if (!jobInfo.salary) {
-    errors.salary = '給与単価を入力してください'
-  } else if (typeof jobInfo.salary !== 'number') {
-    errors.salary = '給与単価は数値で入力してください'
+  if (jobInfo.minSalary === null || Number.isNaN(jobInfo.minSalary)) {
+    errors.minSalary = '最小給与を入力してください'
+  } else if (typeof jobInfo.minSalary !== 'number' || jobInfo.minSalary < 0) {
+    errors.minSalary = '最小給与は0以上の数値で入力してください'
+  }
+
+  if (jobInfo.maxSalary === null || Number.isNaN(jobInfo.maxSalary)) {
+    errors.maxSalary = '最大給与を入力してください'
+  } else if (typeof jobInfo.maxSalary !== 'number' || jobInfo.maxSalary < 0) {
+    errors.maxSalary = '最大給与は0以上の数値で入力してください'
+  }
+
+  if (
+    jobInfo.minSalary !== null &&
+    jobInfo.maxSalary !== null &&
+    !Number.isNaN(jobInfo.minSalary) &&
+    !Number.isNaN(jobInfo.maxSalary) &&
+    jobInfo.minSalary > jobInfo.maxSalary
+  ) {
+    errors.maxSalary = '最大給与は最小給与以上で入力してください'
   }
 
   if (!jobInfo.appealPoints) {
@@ -562,6 +613,22 @@ const handleCreateScout = async () => {
   min-height: 100px;
 }
 
+.salary-range {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.salary-range-item {
+  flex: 1;
+}
+
+.salary-range-separator {
+  line-height: 44px;
+  color: #666;
+  font-weight: 600;
+}
+
 .error-message {
   display: block;
   color: #f56c6c;
@@ -619,6 +686,16 @@ const handleCreateScout = async () => {
   .header-nav {
     flex-direction: column;
     gap: 12px;
+  }
+
+  .salary-range {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .salary-range-separator {
+    line-height: 1;
+    align-self: center;
   }
 }
 </style>
