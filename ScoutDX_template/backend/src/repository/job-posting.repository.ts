@@ -28,7 +28,19 @@ export interface CreateJobPostingInput {
 export class JobPostingRepository {
   constructor(private readonly dataSource: DataSource) {}
 
+  private async syncPrimaryKeySequence(): Promise<void> {
+    await this.dataSource.query(`
+      SELECT setval(
+        pg_get_serial_sequence('job_postings', 'job_posting_id'),
+        COALESCE((SELECT MAX(job_posting_id) FROM job_postings), 0) + 1,
+        false
+      )
+    `);
+  }
+
   async create(input: CreateJobPostingInput): Promise<JobPostingRow> {
+    await this.syncPrimaryKeySequence();
+
     const rows = await this.dataSource.query(
       `
         INSERT INTO JOB_POSTINGS (
