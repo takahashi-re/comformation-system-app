@@ -15,6 +15,7 @@ import { AIConfigService } from "./service/ai-config.service";
 import { LoginService } from "./service/login.service";
 import { AIConfigRepository } from "./repository/ai-config.repository";
 import { ScoutService } from "./service/scout.service";
+import { UserService } from "./service/user.service";
 import { ScoutMessageEntity } from "./type/scout-message";
 import { ScoutEntity } from "./type/scout";
 
@@ -32,6 +33,7 @@ import { ScoutEntity } from "./type/scout";
     ScoutMessageRepository,
     AiGenerateService,
     LoginService,
+    UserService,
     LoginRepository,
     EmployeeRepository,
     JobPostingRepository,
