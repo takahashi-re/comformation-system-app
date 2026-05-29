@@ -239,6 +239,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { apiClient } from '../../api/client'
 
 // 求人情報
 interface JobInfo {
@@ -393,19 +394,7 @@ const handleCreateScout = async () => {
       textStyle: textStyle.value
     }
 
-    const response = await fetch('/api/ai/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestData)
-    })
-
-    if (!response.ok) {
-      throw new Error('スカウト文の生成に失敗しました')
-    }
-
-    const data: ScoutGenerateResponse = await response.json()
+    const { data } = await apiClient.post<ScoutGenerateResponse>('/api/ai/generate', requestData)
     sessionStorage.setItem('generatedScoutMessage', data.body)
     window.alert('スカウト文を生成しました')
     router.push(`/scout/${data.scoutId}/edit`)
