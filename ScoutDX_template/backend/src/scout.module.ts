@@ -4,6 +4,7 @@ import { AiGenerateController } from "./controller/ai-generate.controller";
 import { AIConfigController } from "./controller/ai-config.controller";
 import { LoginController } from "./controller/login.controller";
 import { ScoutController } from "./controller/scout.controller";
+import { UserController } from "./controller/user.controller";
 import { LoginRepository } from "./repository/login.repository";
 import { JobPostingRepository } from "./repository/job-posting.repository";
 import { JobSeekerRepository } from "./repository/job-seeker.repository";
@@ -18,7 +19,13 @@ import { ScoutEntity } from "./type/scout";
 
 @Module({
   imports: [TypeOrmModule.forFeature([ScoutEntity, ScoutMessageEntity])],
-  controllers: [ScoutController, AiGenerateController, LoginController, AIConfigController],
+  controllers: [
+    ScoutController,
+    AiGenerateController,
+    LoginController,
+    AIConfigController,
+    UserController,
+  ],
   providers: [
     ScoutService,
     ScoutMessageRepository,
