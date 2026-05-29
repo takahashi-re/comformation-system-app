@@ -14,7 +14,28 @@ import ScoutCreate from "../views/scout/ScoutCreate.vue";
 import ScoutDetail from "../views/scout/ScoutDetail.vue";
 import ScoutEdit from "../views/scout/ScoutEdit.vue";
 import ScoutList from "../views/scout/ScoutList.vue";
-import { getToken } from "../api/loginApi";
+import ApprovalDetail from "../views/approval/ApprovalDetail.vue";
+import AIConfig from "../views/setting/AIConfig.vue";
+import { getToken, getUser } from "../api/loginApi";
+
+type AppRole = "sales" | "approver" | "admin";
+
+const toRole = (positionId: number | null | undefined): AppRole => {
+  if (positionId === 3) {
+    return "admin";
+  }
+  if (positionId === 2) {
+    return "approver";
+  }
+  return "sales";
+};
+
+const getHomePath = (role: AppRole): string => {
+  if (role === "admin") {
+    return "/admin/users";
+  }
+  return "/scout/list";
+};
 
 const routes: RouteRecordRaw[] = [
   {
@@ -51,28 +72,40 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/review/:id",
+    name: "review-detail",
+    component: ApprovalDetail,
+    meta: { requiresAuth: true, roles: ["approver", "admin"] },
+  },
+  {
+    path: "/conditions",
+    name: "conditions",
+    component: AIConfig,
+    meta: { requiresAuth: true, roles: ["approver", "admin"] },
+  },
+  {
     path: "/admin/users",
     name: "user-list",
     component: UserList,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, roles: ["admin"] },
   },
   {
     path: "/admin/users/new",
     name: "user-create",
     component: UserCreate,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, roles: ["admin"] },
   },
   {
     path: "/admin/users/:id",
     name: "user-detail",
     component: UserDetail,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, roles: ["admin"] },
   },
   {
     path: "/admin/users/:id/edit",
     name: "user-edit",
     component: UserEdit,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, roles: ["admin"] },
   },
   {
     path: "/auth/change-password",
@@ -89,13 +122,23 @@ export const router = createRouter({
 
 router.beforeEach((to: RouteLocationNormalized) => {
   const isLoggedIn = Boolean(getToken());
+  const role = toRole(getUser()?.position_id);
+
+  if (to.path === "/" && isLoggedIn) {
+    return getHomePath(role);
+  }
 
   if (to.path === "/login" && isLoggedIn) {
-    return "/scout/list";
+    return getHomePath(role);
   }
 
   if (to.meta.requiresAuth && !isLoggedIn) {
     return "/login";
+  }
+
+  const allowedRoles = to.meta.roles as AppRole[] | undefined;
+  if (allowedRoles && !allowedRoles.includes(role)) {
+    return getHomePath(role);
   }
 
   return true;
