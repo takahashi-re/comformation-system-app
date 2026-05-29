@@ -7,7 +7,8 @@ interface JobInfo {
   businessContent: string;
   requiredSkills: string;
   location: string;
-  salary: number;
+  minSalary: number;
+  maxSalary: number;
   appealPoints: string;
 }
 
@@ -21,7 +22,7 @@ interface ApplicantInfo {
 interface GenerateRequest {
   jobInfo: JobInfo;
   applicantInfo: ApplicantInfo;
-  textStyle?: string;
+  textStyle?: 'casual' | 'formal';
 }
 
 @Controller('api/ai')
