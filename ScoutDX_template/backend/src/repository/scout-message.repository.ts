@@ -43,6 +43,124 @@ export interface CreateScoutMessageInput {
 export class ScoutMessageRepository {
   constructor(private readonly dataSource: DataSource) {}
 
+  // Compatibility methods used by ScoutService.
+  async findAll(): Promise<any[]> {
+    return this.dataSource.query(
+      `
+        SELECT
+          scout_message_id::text AS id,
+          created_at,
+          COALESCE(created_by_employee_id, '') AS creator,
+          '' AS title,
+          COALESCE(message_content, '') AS body,
+          COALESCE(status, 'DRAFT') AS status
+        FROM SCOUT_MESSAGES
+        ORDER BY created_at DESC NULLS LAST, scout_message_id DESC
+      `,
+    );
+  }
+
+  async save(scout: any): Promise<any> {
+    const rows = await this.dataSource.query(
+      `
+        INSERT INTO SCOUT_MESSAGES (
+          message_content,
+          created_by_employee_id,
+          updated_by_employee_id,
+          status,
+          created_at,
+          updated_at
+        )
+        VALUES ($1, $2, $2, $3, NOW(), NOW())
+        RETURNING
+          scout_message_id::text AS id,
+          created_at,
+          COALESCE(created_by_employee_id, '') AS creator,
+          '' AS title,
+          COALESCE(message_content, '') AS body,
+          COALESCE(status, 'DRAFT') AS status
+      `,
+      [scout?.body ?? '', scout?.creator ?? null, scout?.status ?? 'DRAFT'],
+    );
+
+    return rows[0];
+  }
+
+  async findById(id: string): Promise<any | null> {
+    const rows = await this.dataSource.query(
+      `
+        SELECT
+          scout_message_id::text AS id,
+          created_at,
+          COALESCE(created_by_employee_id, '') AS creator,
+          '' AS title,
+          COALESCE(message_content, '') AS body,
+          COALESCE(status, 'DRAFT') AS status
+        FROM SCOUT_MESSAGES
+        WHERE scout_message_id = $1
+        LIMIT 1
+      `,
+      [Number(id)],
+    );
+
+    return rows[0] ?? null;
+  }
+
+  async updateScout(id: string, body: string, status: string): Promise<any | null> {
+    const rows = await this.dataSource.query(
+      `
+        UPDATE SCOUT_MESSAGES
+        SET message_content = $2,
+            status = $3,
+            updated_at = NOW()
+        WHERE scout_message_id = $1
+        RETURNING
+          scout_message_id::text AS id,
+          created_at,
+          COALESCE(created_by_employee_id, '') AS creator,
+          '' AS title,
+          COALESCE(message_content, '') AS body,
+          COALESCE(status, 'DRAFT') AS status
+      `,
+      [Number(id), body, status],
+    );
+
+    return rows[0] ?? null;
+  }
+
+  async findLatestRejectCommentByScoutId(id: string): Promise<string> {
+    const rows = await this.dataSource.query(
+      `
+        SELECT return_comment
+        FROM SCOUT_MESSAGE_HISTORIES
+        WHERE scout_message_id = $1
+        ORDER BY returned_at DESC NULLS LAST, scout_message_history_id DESC
+        LIMIT 1
+      `,
+      [Number(id)],
+    );
+
+    return rows[0]?.return_comment ?? '';
+  }
+
+  async saveGeneratedMessage(messageContent: string): Promise<number> {
+    const rows = await this.dataSource.query(
+      `
+        INSERT INTO SCOUT_MESSAGES (
+          message_content,
+          status,
+          created_at,
+          updated_at
+        )
+        VALUES ($1, 'DRAFT', NOW(), NOW())
+        RETURNING scout_message_id
+      `,
+      [messageContent],
+    );
+
+    return Number(rows[0].scout_message_id);
+  }
+
   async findAllActive(
     scoutMessageId?: number,
   ): Promise<ScoutMessageWithRelationsRow[]> {

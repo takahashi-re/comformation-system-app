@@ -5,7 +5,6 @@ import { LoginController } from "./controller/login.controller";
 import { ScoutController } from "./controller/scout.controller";
 import { LoginRepository } from "./repository/login.repository";
 import { ScoutMessageRepository } from "./repository/scout-message.repository";
-import { ScoutRepository } from "./repository/scout.repository";
 import { AiGenerateService } from "./service/ai-generate.service";
 import { LoginService } from "./service/login.service";
 import { ScoutService } from "./service/scout.service";
@@ -17,7 +16,6 @@ import { ScoutEntity } from "./type/scout";
   controllers: [ScoutController, AiGenerateController, LoginController],
   providers: [
     ScoutService,
-    ScoutRepository,
     ScoutMessageRepository,
     AiGenerateService,
     LoginService,
