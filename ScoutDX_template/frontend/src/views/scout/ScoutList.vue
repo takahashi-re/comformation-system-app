@@ -26,7 +26,7 @@
             </td>
 
             <!-- ボタン -->
-            <td>
+            <td class="action-cell">
               <!-- 詳細 -->
               <button @click="goDetail(scout.id)">詳細</button>
 
@@ -72,16 +72,35 @@
       <div class="box">
         <div class="box-title">filter選択</div>
         <div class="box-body">
-          <select v-model="filterStatus">
-            <option value="">すべて</option>
-            <option value="下書き">下書き</option>
-            <option value="承認者承認待ち">承認者承認待ち</option>
-            <option value="承認者差戻し">承認者差戻し</option>
-            <option value="管理者承認待ち">管理者承認待ち</option>
-            <option value="管理者差戻し">管理者差戻し</option>
-            <option value="利用可能">利用可能</option>
-            <option value="送信済み">送信済み</option>
-          </select>
+          <div style="margin-bottom: 10px;">
+            <label>ステータス
+              <select v-model="filterStatus">
+                <option value="">すべて</option>
+                <option value="下書き">下書き</option>
+                <option value="承認者承認待ち">承認者承認待ち</option>
+                <option value="承認者差戻し">承認者差戻し</option>
+                <option value="管理者承認待ち">管理者承認待ち</option>
+                <option value="管理者差戻し">管理者差戻し</option>
+                <option value="利用可能">利用可能</option>
+              </select>
+            </label>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label>会社名
+              <select v-model="filterCompany">
+                <option value="">すべて</option>
+                <option v-for="c in companies" :key="c" :value="c">{{ c }}</option>
+              </select>
+            </label>
+          </div>
+          <div>
+            <label>職種
+              <select v-model="filterJob">
+                <option value="">すべて</option>
+                <option v-for="j in jobs" :key="j" :value="j">{{ j }}</option>
+              </select>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -132,7 +151,7 @@ const STATUS_MAP = {
   PENDING_ADMIN: "管理者承認待ち",
   REJECTED_BY_ADMIN: "管理者差戻し",
   AVAILABLE: "利用可能",
-  SENT: "送信済み",
+  SENT: "利用可能",
 };
 
 export default {
@@ -145,8 +164,9 @@ export default {
   data() {
     return {
       positionId: getUser()?.position_id ?? 1,
-
       filterStatus: "",
+      filterCompany: "",
+      filterJob: "",
       selectedColumns: ["company", "job", "status"],
       scouts: [],
     };
@@ -162,10 +182,22 @@ export default {
     },
 
     filteredScouts() {
-      if (!this.filterStatus) return this.scouts;
-      return this.scouts.filter(
-        (s) => s.statusLabel === this.filterStatus
-      );
+      return this.scouts.filter(s => {
+        if (this.filterStatus && s.statusLabel !== this.filterStatus) return false;
+        if (this.filterCompany && s.company !== this.filterCompany) return false;
+        if (this.filterJob && s.job !== this.filterJob) return false;
+        return true;
+      });
+    },
+
+    companies() {
+      // 重複除去
+      const set = new Set(this.scouts.map(s => s.company).filter(Boolean));
+      return Array.from(set);
+    },
+    jobs() {
+      const set = new Set(this.scouts.map(s => s.job).filter(Boolean));
+      return Array.from(set);
     },
   },
 
@@ -204,14 +236,14 @@ export default {
     },
 
     isEditable(status) {
-      return ["承認者差戻し", "管理者差戻し"].includes(status);
+      return ["下書き", "承認者差戻し", "管理者差戻し"].includes(status);
     },
 
     getRowClass(status) {
       if (["承認者差戻し", "管理者差戻し"].includes(status)) {
         return "returned";
       }
-      if (["利用可能", "送信済み"].includes(status)) {
+      if (["利用可能"].includes(status)) {
         return "approved";
       }
       return "";
@@ -258,7 +290,7 @@ export default {
 }
 
 .main {
-  flex: 3;
+      border-left: 1px solid #e0e4ea;
 }
 
 .sidebar {
@@ -287,8 +319,14 @@ export default {
   border-bottom: 1px solid #ccc;
 }
 
-.action-col {
-  width: 200px;
+.action-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  border-bottom: none;
+  border-left: 2px solid #bfc9d6;
 }
 
 .footer {
@@ -323,5 +361,15 @@ export default {
 
 .box-body {
   padding: 10px;
+}
+/* --- テーブル幅だけ拡大 --- */
+.main {
+  flex: 4;
+  min-width: 900px;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
 }
 </style>
