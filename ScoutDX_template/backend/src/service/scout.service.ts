@@ -1,10 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { ScoutRepository } from '../repository/scout.repository';
+import { ScoutMessageRepository } from '../repository/scout-message.repository';
 import { ScoutEntity } from '../type/scout';
 
 @Injectable()
 export class ScoutService {
-  constructor(private readonly scoutRepository: ScoutRepository) {}
+  constructor(private readonly scoutRepository: ScoutMessageRepository) {}
 
   findAll(): Promise<ScoutEntity[]> {
     return this.scoutRepository.findAll();
