@@ -32,7 +32,9 @@ const loginStore = useLoginStore();
 const showHeader = computed(
   () => route.path !== "/login" && loginStore.isLoggedIn,
 );
-const userName = computed(() => loginStore.user?.employee_id ?? "");
+const userName = computed(
+  () => loginStore.user?.name ?? loginStore.user?.employee_id ?? "",
+);
 
 const handleLogout = (): void => {
   loginStore.logout();

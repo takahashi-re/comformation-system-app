@@ -40,6 +40,7 @@ export class LoginService {
     const token = this.generateToken();
     const session: LoginSession = {
       employee_id: employee.employee_id,
+      name: employee.name,
       position_id:
         employee.position_id !== null ? Number(employee.position_id) : null,
     };
