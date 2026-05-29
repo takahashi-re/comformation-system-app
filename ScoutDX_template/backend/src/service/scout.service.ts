@@ -28,4 +28,16 @@ export class ScoutService {
   private generateId(): string {
     return Math.random().toString(36).substring(2, 9).toUpperCase();
   }
+
+  
+  async findOne(id: string) {
+    // スカウト詳細と最新差戻しコメントを返す
+    const scout = await this.scoutRepository.findById(id);
+    const latestRejectComment = await this.scoutRepository.findLatestRejectCommentByScoutId(id);
+    return { scout, latestRejectComment };
+  }
+
+  async update(id: string, dto: { body: string, status: string }) {
+    return this.scoutRepository.updateScout(id, dto.body, dto.status);
+  }
 }
