@@ -13,3 +13,8 @@ export interface LoginResponse {
   access_token: string;
   user: LoginSession;
 }
+
+export interface ChangePasswordRequest {
+  old_password: string;
+  new_password: string;
+}

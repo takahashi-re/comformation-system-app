@@ -11,7 +11,7 @@ import ScoutCreate from "../views/scout/ScoutCreate.vue";
 import ScoutDetail from "../views/scout/ScoutDetail.vue";
 import ScoutEdit from "../views/scout/ScoutEdit.vue";
 import ScoutList from "../views/scout/ScoutList.vue";
-import { getToken } from "../api/loginApi";
+import { useLoginStore } from "../store/login.Store";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -66,14 +66,28 @@ export const router = createRouter({
   routes,
 });
 
-router.beforeEach((to: RouteLocationNormalized) => {
-  const isLoggedIn = Boolean(getToken());
+router.beforeEach(async (to: RouteLocationNormalized) => {
+  const loginStore = useLoginStore();
 
-  if (to.path === "/login" && isLoggedIn) {
+  if (to.meta.requiresAuth && !loginStore.isLoggedIn) {
+    await loginStore.checkSession();
+  }
+
+  if (to.path === "/" && loginStore.isLoggedIn) {
     return "/scout/list";
   }
 
-  if (to.meta.requiresAuth && !isLoggedIn) {
+  if (to.path === "/login") {
+    if (loginStore.isLoggedIn) {
+      await loginStore.logout();
+    } else {
+      loginStore.user = null;
+      loginStore.error = "";
+    }
+    return true;
+  }
+
+  if (to.meta.requiresAuth && !loginStore.isLoggedIn) {
     return "/login";
   }
 
