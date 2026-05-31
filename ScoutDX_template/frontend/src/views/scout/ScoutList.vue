@@ -1,126 +1,375 @@
 <template>
-  <div class="page">
-
-    <!-- タイトル -->
-    <h1>スカウト文一覧（営業担当）</h1>
-
+  <div class="container">
+    <!-- 左メイン -->
     <div class="main">
-
-      <!-- 左：一覧 -->
-      <div class="list-area">
-        <h3>スカウト文一覧（{{ scoutList.length }}件）</h3>
-
-        <table>
-          <thead>
-            <tr>
-              <th>内容</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <tr v-for="item in scoutList" :key="item.id">
-              <td>{{ item.text }}</td>
-              <td>
-                <button @click="goDetail(item.id)">詳細</button>
-                <button @click="goEdit(item.id)">編集</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div class="title">
+        スカウト文一覧（表示件数: {{ filteredScouts.length }}件）
       </div>
 
-      <!-- 右：フィルタ -->
-      <div class="filter-area">
-        <h3>filter選択</h3>
-        <input v-model="filters.keyword" placeholder="キーワード" />
+      <table class="table">
+        <thead>
+          <tr>
+            <th>フィルタリング概要</th>
+            <th class="action-col">操作</th>
+          </tr>
+        </thead>
 
-        <h3>表示内容選択</h3>
-        <select v-model="filters.status">
-          <option value="">すべて</option>
-          <option value="通常">通常</option>
-          <option value="差し戻し">差し戻し</option>
-          <option value="承認済み">承認済み</option>
-        </select>
+        <tbody>
+          <tr
+            v-for="scout in filteredScouts"
+            :key="scout.id"
+            :class="getRowClass(scout.statusLabel)"
+          >
+            <!-- 概要 -->
+            <td>
+              {{ formattedSummary(scout) }}
+            </td>
 
-        <button @click="search">検索</button>
+            <!-- ボタン -->
+            <td class="action-cell">
+              <!-- 詳細 -->
+              <button @click="goDetail(scout.id)">詳細</button>
+
+              <!-- 営業 -->
+              <button
+                v-if="role === 'sales' && isEditable(scout.statusLabel)"
+                @click="goEdit(scout.id)"
+              >
+                編集
+              </button>
+
+              <!-- 承認者 -->
+              <button
+                v-if="role === 'approver' && scout.status === 'PENDING_APPROVER'"
+                @click="goReview(scout.id)"
+              >
+                承認・差戻し
+              </button>
+
+              <!-- 管理者 -->
+              <button
+                v-if="role === 'admin' && scout.status === 'PENDING_ADMIN'"
+                @click="goReview(scout.id)"
+              >
+                承認・差戻し
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 営業のみ -->
+      <div class="footer" v-if="role === 'sales'">
+        <button class="create-btn" @click="goCreate">
+          新規作成
+        </button>
+      </div>
+    </div>
+
+    <!-- 右サイド -->
+    <div class="sidebar">
+      <!-- filter -->
+      <div class="box">
+        <div class="box-title">filter選択</div>
+        <div class="box-body">
+          <div style="margin-bottom: 10px;">
+            <label>ステータス
+              <select v-model="filterStatus">
+                <option value="">すべて</option>
+                <option value="下書き">下書き</option>
+                <option value="承認者承認待ち">承認者承認待ち</option>
+                <option value="承認者差戻し">承認者差戻し</option>
+                <option value="管理者承認待ち">管理者承認待ち</option>
+                <option value="管理者差戻し">管理者差戻し</option>
+                <option value="利用可能">利用可能</option>
+              </select>
+            </label>
+          </div>
+          <div style="margin-bottom: 10px;">
+            <label>会社名
+              <select v-model="filterCompany">
+                <option value="">すべて</option>
+                <option v-for="c in companies" :key="c" :value="c">{{ c }}</option>
+              </select>
+            </label>
+          </div>
+          <div>
+            <label>職種
+              <select v-model="filterJob">
+                <option value="">すべて</option>
+                <option v-for="j in jobs" :key="j" :value="j">{{ j }}</option>
+              </select>
+            </label>
+          </div>
+        </div>
       </div>
 
-    </div>
+      <!-- 表示内容選択 -->
+      <div class="box" v-if="role === 'sales' || role === 'approver' || role === 'admin'">
+        <div class="box-title">表示内容選択</div>
+        <div class="box-body">
+          <label>
+            <input type="checkbox" value="company" v-model="selectedColumns" />
+            会社名
+          </label><br />
 
-    <!-- 下：ボタン -->
-    <div class="footer">
-      <button @click="goCreate">新規作成</button>
-    </div>
+          <label>
+            <input type="checkbox" value="job" v-model="selectedColumns" />
+            職種
+          </label><br />
 
+          <label>
+            <input type="checkbox" value="status" v-model="selectedColumns" />
+            ステータス
+          </label>
+
+          <hr />
+
+          <button @click="selectAll">全選択</button>
+          <button @click="clearAll">全解除</button>
+        </div>
+      </div>
+
+      <!-- 共通：生成文条件編集 -->
+      <div v-if="role !== 'sales'" style="margin-top:20px; text-align:center;">
+        <button class="create-btn" @click="goConditions">
+          生成文条件編集
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script>
+import { fetchScouts } from "../../api/scoutApi";
+import { getUser } from "../../api/loginApi";
 
-const scoutList = ref([
-  { id: 1, text: 'スカウト文①' },
-  { id: 2, text: 'スカウト文②' },
-  { id: 3, text: 'スカウト文③' }
-])
+const STATUS_MAP = {
+  DRAFT: "下書き",
+  PENDING_APPROVER: "承認者承認待ち",
+  REJECTED_BY_APPROVER: "承認者差戻し",
+  PENDING_ADMIN: "管理者承認待ち",
+  REJECTED_BY_ADMIN: "管理者差戻し",
+  AVAILABLE: "利用可能",
+  SENT: "利用可能",
+};
 
-const filters = ref({
-  keyword: '',
-  status: ''
-})
+export default {
+  name: "ScoutList",
 
-const search = () => {
-  console.log('検索実行', filters.value)
-}
+  async mounted() {
+    await this.loadScouts();
+  },
 
-const goDetail = (id) => {
-  console.log('詳細', id)
-}
+  data() {
+    return {
+      positionId: getUser()?.position_id ?? 1,
+      filterStatus: "",
+      filterCompany: "",
+      filterJob: "",
+      selectedColumns: ["company", "job", "status"],
+      scouts: [],
+    };
+  },
 
-const goEdit = (id) => {
-  console.log('編集', id)
-}
+  computed: {
+    // ✅ ロール判定
+    role() {
+      if (this.positionId === 1) return "sales";
+      if (this.positionId === 2) return "approver";
+      if (this.positionId === 3) return "admin";
+      return "";
+    },
 
-const goCreate = () => {
-  console.log('新規作成')
-}
+    filteredScouts() {
+      return this.scouts.filter(s => {
+        if (this.filterStatus && s.statusLabel !== this.filterStatus) return false;
+        if (this.filterCompany && s.company !== this.filterCompany) return false;
+        if (this.filterJob && s.job !== this.filterJob) return false;
+        return true;
+      });
+    },
+
+    companies() {
+      // 重複除去
+      const set = new Set(this.scouts.map(s => s.company).filter(Boolean));
+      return Array.from(set);
+    },
+    jobs() {
+      const set = new Set(this.scouts.map(s => s.job).filter(Boolean));
+      return Array.from(set);
+    },
+  },
+
+  methods: {
+    async loadScouts() {
+      try {
+        const rows = await fetchScouts();
+        this.scouts = rows.map((row) => ({
+          id: row.id,
+          company: row.company_name || "-",
+          job: row.job_title || "-",
+          status: row.status,
+          statusLabel: STATUS_MAP[row.status] || "-",
+        }));
+      } catch (e) {
+        console.error(e);
+        this.scouts = [];
+      }
+    },
+
+    // ✅ 表示まとめ
+    formattedSummary(scout) {
+      const parts = [];
+
+      if (this.selectedColumns.includes("company")) {
+        parts.push(`会社名：${scout.company}`);
+      }
+      if (this.selectedColumns.includes("job")) {
+        parts.push(`職種：${scout.job}`);
+      }
+      if (this.selectedColumns.includes("status")) {
+        parts.push(`ステータス：${scout.statusLabel}`);
+      }
+
+      return parts.join("、");
+    },
+
+    isEditable(status) {
+      return ["下書き", "承認者差戻し", "管理者差戻し"].includes(status);
+    },
+
+    getRowClass(status) {
+      if (["承認者差戻し", "管理者差戻し"].includes(status)) {
+        return "returned";
+      }
+      if (["利用可能"].includes(status)) {
+        return "approved";
+      }
+      return "";
+    },
+
+    // ✅ 遷移
+    goDetail(id) {
+      this.$router.push(`/scout/${id}`);
+    },
+
+    goEdit(id) {
+      this.$router.push(`/scout/${id}/edit`);
+    },
+
+    goCreate() {
+      this.$router.push("/scout/create");
+    },
+
+    goReview(id) {
+      this.$router.push(`/review/${id}`);
+    },
+
+    goConditions() {
+      this.$router.push("/conditions");
+    },
+
+    selectAll() {
+      this.selectedColumns = ["company", "job", "status"];
+    },
+
+    clearAll() {
+      this.selectedColumns = [];
+    },
+  },
+};
 </script>
 
 <style scoped>
-.page {
+.container {
+  display: flex;
+  gap: 20px;
   padding: 20px;
+  background: #f5f5f5;
 }
 
 .main {
-  display: flex;
-  gap: 20px;
+      border-left: 1px solid #e0e4ea;
 }
 
-/* 左 */
-.list-area {
+.sidebar {
   flex: 1;
 }
 
-table {
+.title {
+  background: #3b73a8;
+  color: white;
+  padding: 10px;
+  font-weight: bold;
+}
+
+.table {
   width: 100%;
   border-collapse: collapse;
 }
 
-th, td {
-  border: 1px solid #ccc;
+.table th {
+  background: #bfc9d6;
   padding: 8px;
 }
 
-/* 右 */
-.filter-area {
-  width: 250px;
-  border: 1px solid #ccc;
+.table td {
+  padding: 8px;
+  border-bottom: 1px solid #ccc;
+}
+
+.action-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  border-bottom: none;
+  border-left: 2px solid #bfc9d6;
+}
+
+.footer {
+  margin-top: 10px;
+  text-align: right;
+}
+
+.create-btn {
+  background: #3b73a8;
+  color: white;
   padding: 10px;
 }
 
-/* 下 */
-.footer {
-  margin-top: 20px;
+.returned {
+  background: #efe2c0;
+}
+
+.approved {
+  background: #cfe3cf;
+}
+
+.box {
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+}
+
+.box-title {
+  background: #3b73a8;
+  color: white;
+  padding: 10px;
+}
+
+.box-body {
+  padding: 10px;
+}
+/* --- テーブル幅だけ拡大 --- */
+.main {
+  flex: 4;
+  min-width: 900px;
+}
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 800px;
 }
 </style>

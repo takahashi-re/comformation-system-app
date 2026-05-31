@@ -19,10 +19,11 @@ export async function loginApi(
   }
 
   try {
-    await apiClient.post("/api/login", {
+    const { data } = await apiClient.post<LoginResponse>("/api/login", {
       employee_id,
       password,
     });
+    return data;
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
       const message =
@@ -34,6 +35,10 @@ export async function loginApi(
     }
     throw new Error("ログインに失敗しました");
   }
+}
+
+export function saveToken(token: string): void {
+  localStorage.setItem("access_token", token);
 }
 
 export async function getMeApi(): Promise<LoginUser> {

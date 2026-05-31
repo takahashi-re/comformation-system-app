@@ -7,11 +7,18 @@ import {
 import Login from "../views/auth/Login.vue";
 import ChangePassword from "../views/auth/ChangePassword.vue";
 import UserList from "../views/admin/UserList.vue";
+import UserDetail from "../views/admin/UserDetail.vue";
+import UserEdit from "../views/admin/UserEdit.vue";
+import UserCreate from "../views/admin/UserCreate.vue";
 import ScoutCreate from "../views/scout/ScoutCreate.vue";
 import ScoutDetail from "../views/scout/ScoutDetail.vue";
 import ScoutEdit from "../views/scout/ScoutEdit.vue";
 import ScoutList from "../views/scout/ScoutList.vue";
-import { useLoginStore } from "../store/login.Store";
+import ApprovalDetail from "../views/approval/ApprovalDetail.vue";
+import AIConfig from "../views/setting/AIConfig.vue";
+import { clearLogin, getToken } from "../api/loginApi";
+
+const getHomePath = () => "/scout/list";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -48,10 +55,41 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
+    path: "/review/:id",
+    name: "review-detail",
+    component: ApprovalDetail,
+    meta: { requiresAuth: true, roles: ["approver", "admin"] },
+  },
+  {
+    // AI設定画面（NGワード・最大文字数設定）
+    path: "/conditions",
+    name: "conditions",
+    component: AIConfig,
+    meta: { requiresAuth: true, roles: ["approver", "admin"] },
+  },
+  {
     path: "/admin/users",
     name: "user-list",
     component: UserList,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, roles: ["admin"] },
+  },
+  {
+    path: "/admin/users/new",
+    name: "user-create",
+    component: UserCreate,
+    meta: { requiresAuth: true, roles: ["admin"] },
+  },
+  {
+    path: "/admin/users/:id",
+    name: "user-detail",
+    component: UserDetail,
+    meta: { requiresAuth: true, roles: ["admin"] },
+  },
+  {
+    path: "/admin/users/:id/edit",
+    name: "user-edit",
+    component: UserEdit,
+    meta: { requiresAuth: true, roles: ["admin"] },
   },
   {
     path: "/auth/change-password",
@@ -69,12 +107,14 @@ export const router = createRouter({
 router.beforeEach(async (to: RouteLocationNormalized) => {
   const loginStore = useLoginStore();
 
-  if (to.meta.requiresAuth && !loginStore.isLoggedIn) {
-    await loginStore.checkSession();
+  if (to.path === "/" && isLoggedIn) {
+    return getHomePath();
   }
 
-  if (to.path === "/" && loginStore.isLoggedIn) {
-    return "/scout/list";
+  if (to.path === "/login") {
+    // /login へ来た場合は強制ログアウトするが、遷移自体は許可する
+    clearLogin();
+    return true;
   }
 
   if (to.path === "/login") {
@@ -90,6 +130,5 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
   if (to.meta.requiresAuth && !loginStore.isLoggedIn) {
     return "/login";
   }
-
   return true;
 });
