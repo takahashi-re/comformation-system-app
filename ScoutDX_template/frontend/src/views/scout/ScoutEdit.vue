@@ -1,10 +1,8 @@
 <!-- ScoutResubmit.vue -->
 <template>
-  
-<!-- メイン -->
+  <!-- メイン -->
   <div class="main">
-
-<!-- 左 -->
+    <!-- 左 -->
     <div class="left">
       <div class="box-title">スカウト文入力欄</div>
       <div class="box-content">
@@ -16,7 +14,7 @@
       </div>
     </div>
 
-<!-- 右 -->
+    <!-- 右 -->
     <div class="right">
       <div class="box-title">差戻しコメント</div>
       <div class="box-content">
@@ -26,13 +24,12 @@
         <div class="comment-box" v-else>差戻しコメントはありません</div>
       </div>
       <div class="actions">
-      <button class="btn save" @click="saveDraft">保存</button>
-      <button class="btn submit" @click="submit">申請</button>
-    </div>
+        <button class="btn save" @click="saveDraft">保存</button>
+        <button class="btn submit" @click="submit">申請</button>
+      </div>
     </div>
   </div>
 </template>
-
 
 <script setup>
 import { ref, onMounted } from "vue";
@@ -43,39 +40,34 @@ const route = useRoute();
 const router = useRouter();
 const scoutId = route.params.id;
 
-
 // state
 const scout = ref({
   id: null,
-  body: ''
-})
+  body: "",
+});
 
-const latestRejectComment = ref(null)
-const loading = ref(true)
-
+const latestRejectComment = ref(null);
+const loading = ref(true);
 
 // 初期表示（DBから取得）
 onMounted(async () => {
-  loading.value = true
+  loading.value = true;
 
   try {
-    const res = await fetchScoutDetail(scoutId)
+    const res = await fetchScoutDetail(scoutId);
 
     // 最新スカウト文
-    scout.value = res.scout
+    scout.value = res.scout;
 
     // 最新差戻しコメント
-    latestRejectComment.value = res.latestRejectComment
+    latestRejectComment.value = res.latestRejectComment;
 
     // ここでテキストエリアに反映
     scout.value.body = res.scout.body;
-
   } finally {
-    loading.value = false
-
- }
-})
-
+    loading.value = false;
+  }
+});
 
 /**
  * 保存（下書き保存）
@@ -85,15 +77,12 @@ const saveDraft = async () => {
   await updateScout({
     id: scout.value.id,
     body: scout.value.body,
-    status: 'DRAFT'
-  })
-
-  alert('保存しました')
+    status: "DRAFT",
+  });
 
   // 一覧へ戻る（図の最後）
-  router.push('/scout/list')
-}
-
+  router.push("/scout/list");
+};
 
 /**
  * 申請
@@ -101,34 +90,29 @@ const saveDraft = async () => {
  */
 const submit = async () => {
   // バリデーションチェック（図の分岐）
-  if (!scout.value.body || scout.value.body.trim() === '') {
-    alert('スカウト文を入力してください')
-    return
+  if (!scout.value.body || scout.value.body.trim() === "") {
+    alert("スカウト文を入力してください");
+    return;
   }
   //NGワード、文字数チェック実装などもここで行う。フロントでやるか、バックでやるか？？？
 
-await updateScout({
+  await updateScout({
     id: scout.value.id,
     body: scout.value.body,
-    status: 'PENDING_APPROVER' // 承認者承認待ち
-  })
+    status: "PENDING_APPROVER", // 承認者承認待ち
+  });
 
-  alert('申請しました')
+  alert("申請しました");
 
-  
- // 一覧へ戻る（図の最後）
-  router.push('/scout/list')
-}
-
+  // 一覧へ戻る（図の最後）
+  router.push("/scout/list");
+};
 </script>
 
-
 <style scoped>
-
 .container {
   padding: 20px;
 }
-
 
 /* メイン左右 */
 .main {
@@ -136,12 +120,10 @@ await updateScout({
   gap: 20px;
 }
 
-
 /* 左側：スカウト入力 */
 .left {
   flex: 2;
 }
-
 
 /* 右側：コメント */
 .right {
@@ -149,7 +131,6 @@ await updateScout({
   display: flex;
   flex-direction: column;
 }
-
 
 /* タイトルバー */
 .box-title {
@@ -190,7 +171,6 @@ await updateScout({
   font-family: Arial, sans-serif;
 }
 
-
 /* ボタン */
 .actions {
   display: flex;
@@ -198,7 +178,6 @@ await updateScout({
   gap: 20px;
   margin-top: 20px;
 }
-
 
 /* ボタン共通 */
 .btn {
@@ -208,7 +187,6 @@ await updateScout({
   font-weight: bold;
   border: 2px solid #020303;
 }
-
 
 /* 保存 */
 .save {
@@ -221,6 +199,4 @@ await updateScout({
   background-color: #3c78b4;
   color: white;
 }
-
-
 </style>
