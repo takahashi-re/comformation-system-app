@@ -149,49 +149,113 @@ onMounted(() => {
 
 <style scoped>
 .user-list-page {
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
+  padding: 48px 24px 64px;
 }
 
 .title-bar {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 16px;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e5e7eb;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.title-bar h1 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: #1f2937;
+}
+
+.title-bar p {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6b7280;
+  margin: 0;
 }
 
 .toolbar {
   display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: 16px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 .toolbar label {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  letter-spacing: -0.01em;
 }
 
 .toolbar select {
-  min-width: 180px;
-  padding: 6px 8px;
+  min-width: 200px;
+  height: 40px;
+  padding: 0 12px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1f2937;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%234b5563' d='M4.427 6.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 6H4.604a.25.25 0 00-.177.427z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 36px;
+}
+
+.toolbar select:hover {
+  border-color: #9ca3af;
+}
+
+.toolbar select:focus {
+  outline: none;
+  border-color: #374151;
+  box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.1);
 }
 
 .error-message {
-  color: #c0392b;
-  margin: 0 0 12px;
+  color: #dc2626;
+  background: #fee2e2;
+  border: 1px solid #fecaca;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0 0 24px;
 }
 
 .loading {
-  margin: 16px 0;
+  margin: 24px 0;
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
 }
 
 .table-wrapper {
   background: #ffffff;
-  border: 1px solid #d9dfe8;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  overflow: auto;
+  overflow: hidden;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 .user-table {
@@ -199,53 +263,197 @@ onMounted(() => {
   border-collapse: collapse;
 }
 
-.user-table th,
-.user-table td {
-  border-bottom: 1px solid #eef1f5;
+.user-table th {
+  background: #f9fafb;
+  padding: 14px 16px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
   text-align: left;
-  padding: 10px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  letter-spacing: -0.01em;
+}
+
+.user-table td {
+  padding: 16px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+  color: #1f2937;
+  line-height: 1.6;
+}
+
+.user-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.user-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.user-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.user-table td:last-child {
+  display: flex;
+  gap: 8px;
+  border-bottom: none;
+}
+
+.user-table td button {
+  min-width: 70px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1.5px solid #d1d5db;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: -0.01em;
+  background: #ffffff;
+  color: #374151;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.user-table td button:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.user-table td button:active {
+  background: #f3f4f6;
 }
 
 .edit-button {
-  margin-left: 8px;
+  margin-left: 0 !important;
 }
 
 .empty-message {
   margin: 0;
-  padding: 16px;
-  color: #6b7785;
+  padding: 40px 20px;
+  color: #6b7280;
+  text-align: center;
+  font-size: 14px;
 }
 
 .actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 16px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
 }
 
 .create-button {
-  background: #1f3c88;
-  color: #ffffff;
-  border: 0;
+  min-width: 140px;
+  padding: 11px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1.5px solid #374151;
   border-radius: 6px;
-  padding: 10px 16px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: -0.01em;
+  background: #374151;
+  color: #ffffff;
+  box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.08);
+}
+
+.create-button:hover {
+  background: #1f2937;
+  border-color: #1f2937;
+  box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.15);
+}
+
+.create-button:active {
+  background: #111827;
 }
 
 @media (max-width: 768px) {
+  .user-list-page {
+    padding: 32px 16px 48px;
+  }
+
   .title-bar {
-    display: block;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+  }
+
+  .title-bar h1 {
+    font-size: 24px;
   }
 
   .title-bar p {
-    margin-top: 6px;
+    font-size: 13px;
   }
 
   .toolbar {
-    display: block;
+    flex-direction: column;
+    padding: 16px;
   }
 
   .toolbar label {
-    margin-bottom: 10px;
+    width: 100%;
+  }
+
+  .toolbar select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .user-table {
+    font-size: 13px;
+  }
+
+  .user-table th {
+    padding: 12px;
+    font-size: 12px;
+  }
+
+  .user-table td {
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .user-table td:last-child {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .user-table td button {
+    width: 100%;
+  }
+
+  .actions {
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+
+  .create-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-list-page {
+    padding: 24px 12px 40px;
+  }
+
+  .title-bar h1 {
+    font-size: 22px;
+  }
+
+  .user-table {
+    font-size: 12px;
+  }
+
+  .user-table th,
+  .user-table td {
+    padding: 10px;
   }
 }
 </style>
