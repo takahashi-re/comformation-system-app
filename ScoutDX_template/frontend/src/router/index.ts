@@ -45,7 +45,7 @@ const routes: RouteRecordRaw[] = [
     path: "/scout/create",
     name: "scout-create",
     component: ScoutCreate,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, allowedPositionIds: [1] },
   },
   {
     path: "/scout/:id",
@@ -86,25 +86,25 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/users",
     name: "user-list",
     component: UserList,
-    meta: { requiresAuth: true, roles: ["admin"], allowedPositionIds: [1] },
+    meta: { requiresAuth: true, roles: ["admin"], allowedPositionIds: [3] },
   },
   {
     path: "/admin/users/new",
     name: "user-create",
     component: UserCreate,
-    meta: { requiresAuth: true, roles: ["admin"], allowedPositionIds: [1] },
+    meta: { requiresAuth: true, roles: ["admin"], allowedPositionIds: [3] },
   },
   {
     path: "/admin/users/:id",
     name: "user-detail",
     component: UserDetail,
-    meta: { requiresAuth: true, roles: ["admin"], allowedPositionIds: [1] },
+    meta: { requiresAuth: true, roles: ["admin"], allowedPositionIds: [3] },
   },
   {
     path: "/admin/users/:id/edit",
     name: "user-edit",
     component: UserEdit,
-    meta: { requiresAuth: true, roles: ["admin"], allowedPositionIds: [1] },
+    meta: { requiresAuth: true, roles: ["admin"], allowedPositionIds: [3] },
   },
   {
     path: "/auth/change-password",
