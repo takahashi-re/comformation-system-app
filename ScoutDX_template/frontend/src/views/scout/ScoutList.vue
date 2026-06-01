@@ -17,35 +17,14 @@
           <ScoutListRow
             v-for="scout in filteredScouts"
             :key="scout.id"
-            :class="getRowClass(scout.statusLabel)"
-          >
-            <!-- 概要 -->
-            <td>
-              {{ formattedSummary(scout) }}
-            </td>
-
-            <!-- ボタン -->
-            <td class="action-cell">
-              <!-- 詳細 -->
-              <button @click="goDetail(scout.id)">詳細</button>
-
-              <!-- 営業 -->
-              <button
-                v-if="role === 'sales' && isEditable(scout.statusLabel)"
-                @click="goEdit(scout.id)"
-              >
-                編集
-              </button>
-
-              <!-- 承認・差戻し（対象ステータスのみ） -->
-              <button
-                v-if="canReview(scout.status)"
-                @click="goReview(scout.id)"
-              >
-                承認・差戻し
-              </button>
-            </td>
-          </tr>
+            :scout="scout"
+            :role="role"
+            :selected-columns="selectedColumns"
+            :row-class="getRowClass(scout.statusLabel)"
+            @detail="goDetail"
+            @edit="goEdit"
+            @review="goReview"
+          />
         </tbody>
       </table>
 
