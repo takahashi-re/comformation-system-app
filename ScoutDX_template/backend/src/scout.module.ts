@@ -3,6 +3,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { AiGenerateController } from "./controller/ai-generate.controller";
 import { AIConfigController } from "./controller/ai-config.controller";
 import { LoginController } from "./controller/login.controller";
+import { ReturnCommentGenreController } from "./controller/return-comment-genre.controller";
 import { ScoutController } from "./controller/scout.controller";
 import { UserController } from "./controller/user.controller";
 import { EmployeeRepository } from "./repository/employee.repository";
@@ -26,6 +27,7 @@ import { ScoutEntity } from "./type/scout";
     ScoutController,
     AiGenerateController,
     LoginController,
+    ReturnCommentGenreController,
     AIConfigController,
     UserController,
   ],

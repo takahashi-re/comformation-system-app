@@ -39,17 +39,47 @@ INSERT INTO POSITIONS (position_id, position_name, created_at, updated_at) VALUE
 ON CONFLICT (position_id) DO NOTHING;
 
 INSERT INTO RETURN_COMMENT_GENRES (genre_id, genre_name) VALUES
-  (1, 'Tone and Politeness'),
-  (2, 'Facts and Consistency'),
-  (3, 'Compliance and Risk')
+  (1, '求人：人・事実との整合性がない'),
+  (2, '表現が不正確・不適切'),
+  (3, '情報の過不足・文章構造'),
+  (4, '表現リスク（誇張・断定・誤認）'),
+  (5, 'クレームリスク・情報不足による誤認リスク'),
+  (6, '誤字脱字'),
+  (7, '魅力が伝わっていない'),
+  (8, 'ターゲット不適合'),
+  (9, '構成（ストーリー）が弱い'),
+  (10, '興味喚起が弱い'),
+  (11, 'ジェネラライズできていない'),
+  (12, '視認性が低い・一文が長すぎる'),
+  (13, '法令・コンプライアンス違反'),
+  (14, '事実根拠不明'),
+  (15, '企業イメージ毀損'),
+  (16, 'クレームリスク（対候補者・対企業）')
 ON CONFLICT (genre_id) DO NOTHING;
 
 INSERT INTO RETURN_COMMENT_GENRE_POSITIONS (genre_id, position_id) VALUES
-  (1, 1),
   (1, 2),
+  (1, 3),
   (2, 2),
   (2, 3),
-  (3, 3)
+  (3, 2),
+  (3, 3),
+  (4, 2),
+  (4, 3),
+  (5, 2),
+  (5, 3),
+  (6, 2),
+  (6, 3),
+  (7, 2),
+  (8, 2),
+  (9, 2),
+  (10, 2),
+  (11, 2),
+  (12, 2),
+  (13, 3),
+  (14, 3),
+  (15, 3),
+  (16, 3)
 ON CONFLICT (genre_id, position_id) DO NOTHING;
 
 -- =====================================

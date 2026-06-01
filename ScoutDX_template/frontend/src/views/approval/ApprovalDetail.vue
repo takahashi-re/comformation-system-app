@@ -1,6 +1,5 @@
 <template>
   <div class="container">
-
     <h2>スカウト文承認・差戻し</h2>
     <div class="main">
       <!-- 左 -->
@@ -18,12 +17,27 @@
           <div class="box">
             <div class="title">求人内容表示</div>
             <div class="content">
-              <div><strong>企業名:</strong> {{ jobInfo.companyName || '未設定' }}</div>
-              <div><strong>求人タイトル:</strong> {{ jobInfo.jobTitle || '未設定' }}</div>
-              <div><strong>仕事内容:</strong> {{ jobInfo.jobDescription || '未設定' }}</div>
-              <div><strong>必要スキル:</strong> {{ jobInfo.requiredSkills || '未設定' }}</div>
-              <div><strong>魅力:</strong> {{ jobInfo.jobAppeal || '未設定' }}</div>
-              <div><strong>勤務地:</strong> {{ jobInfo.workLocation || '未設定' }}</div>
+              <div>
+                <strong>企業名:</strong> {{ jobInfo.companyName || "未設定" }}
+              </div>
+              <div>
+                <strong>求人タイトル:</strong>
+                {{ jobInfo.jobTitle || "未設定" }}
+              </div>
+              <div>
+                <strong>仕事内容:</strong>
+                {{ jobInfo.jobDescription || "未設定" }}
+              </div>
+              <div>
+                <strong>必要スキル:</strong>
+                {{ jobInfo.requiredSkills || "未設定" }}
+              </div>
+              <div>
+                <strong>魅力:</strong> {{ jobInfo.jobAppeal || "未設定" }}
+              </div>
+              <div>
+                <strong>勤務地:</strong> {{ jobInfo.workLocation || "未設定" }}
+              </div>
               <div>
                 <strong>想定年収:</strong>
                 {{ formatSalary(jobInfo.minSalary, jobInfo.maxSalary) }}
@@ -36,11 +50,20 @@
             <div class="title">コメント履歴</div>
             <div class="content">
               <div v-if="history.length === 0">コメント履歴はありません</div>
-              <div v-for="item in history" :key="item.historyId" class="history-item">
+              <div
+                v-for="item in history"
+                :key="item.historyId"
+                class="history-item"
+              >
                 <div class="history-meta">
-                  {{ item.returnedByEmployeeName || item.returnedByEmployeeId || '不明' }} / {{ formatDate(item.returnedAt) }}
+                  {{
+                    item.returnedByEmployeeName ||
+                    item.returnedByEmployeeId ||
+                    "不明"
+                  }}
+                  / {{ formatDate(item.returnedAt) }}
                 </div>
-                <div>{{ item.returnComment || '（コメントなし）' }}</div>
+                <div>{{ item.returnComment || "（コメントなし）" }}</div>
               </div>
             </div>
           </div>
@@ -53,7 +76,9 @@
           <div class="title">コメント</div>
           <textarea v-model="comment" placeholder="コメントを入力"></textarea>
           <div v-if="isAdminReviewer" class="reapply-target">
-            <label for="reapplyTarget"><strong>差戻し後の再申請先</strong></label>
+            <label for="reapplyTarget"
+              ><strong>差戻し後の再申請先</strong></label
+            >
             <select id="reapplyTarget" v-model="reapplyTarget">
               <option value="">選択してください</option>
               <option value="APPROVER">営業承認者</option>
@@ -63,29 +88,28 @@
         </div>
 
         <div class="check-area">
-          <label>
-            <input type="checkbox" v-model="reasons.integrity" />
-            人・事実との整合性がない
-          </label>
-          <label>
-            <input type="checkbox" v-model="reasons.accuracy" />
-            表現が不正確・不適切 
-          </label>
-          <label>
-            <input type="checkbox" v-model="reasons.structure" />
-            情報の過不足・文章構造 
-          </label>
-          <label>
-            <input type="checkbox" v-model="reasons.expression" />
-            表現リスク（誇張・断定・誤認）
-          </label>
-          <label>
-            <input type="checkbox" v-model="reasons.claim" />
-            クレームリスク・情報不足による誤認リスク
-          </label>
-          <label>
-            <input type="checkbox" v-model="reasons.typo" />
-            誤字脱字 
+          <div class="check-area-header">
+            <strong>差戻し理由</strong>
+            <button
+              class="genre-manage-btn"
+              type="button"
+              @click="openGenreModal"
+            >
+              ジャンル編集
+            </button>
+          </div>
+
+          <div v-if="reasonGenres.length === 0" class="genre-empty">
+            選択可能なジャンルがありません。ジャンル編集から追加してください。
+          </div>
+
+          <label v-for="genre in reasonGenres" :key="genre.genre_id">
+            <input
+              type="checkbox"
+              :value="`genre:${genre.genre_id}`"
+              v-model="selectedReasonKeys"
+            />
+            {{ genre.genre_name }}
           </label>
         </div>
 
@@ -95,68 +119,189 @@
         </div>
       </div>
     </div>
+
+    <div
+      v-if="isGenreModalOpen"
+      class="modal-overlay"
+      @click.self="closeGenreModal"
+    >
+      <div
+        class="genre-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="ジャンル編集"
+      >
+        <div class="genre-modal-head">
+          <h3>ジャンル編集</h3>
+          <button
+            type="button"
+            class="modal-close-btn"
+            @click="closeGenreModal"
+          >
+            閉じる
+          </button>
+        </div>
+
+        <div class="genre-modal-content">
+          <div class="genre-add-row">
+            <input
+              v-model="newGenreName"
+              type="text"
+              maxlength="100"
+              placeholder="新しいジャンル名を入力"
+            />
+            <button type="button" class="genre-add-btn" @click="handleAddGenre">
+              追加
+            </button>
+          </div>
+
+          <div class="genre-list-wrap">
+            <div v-if="reasonGenres.length === 0" class="genre-empty">
+              登録済みジャンルはありません
+            </div>
+            <div
+              v-for="genre in reasonGenres"
+              :key="`modal-${genre.genre_id}`"
+              class="genre-list-item"
+            >
+              <span>{{ genre.genre_name }}</span>
+              <button
+                type="button"
+                class="genre-delete-btn"
+                @click="handleDeleteGenre(genre.genre_id)"
+              >
+                削除
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { fetchApprovalDetail, approveScout, rejectScout } from '../../api/scoutApi'
-import { getMeApi } from '../../api/loginApi'
+import { ref, onMounted, computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import {
+  fetchApprovalDetail,
+  approveScout,
+  rejectScout,
+} from "../../api/scoutApi";
+import { getMeApi } from "../../api/loginApi";
+import { addMyGenre, deleteMyGenre, fetchMyGenres } from "../../api/genreApi";
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 
-const id = route.params.id
+const id = route.params.id;
 
 const scout = ref({
-  body: ''
-})
+  body: "",
+});
 
 const jobInfo = ref({
   jobPostingId: null,
-  companyName: '',
-  jobTitle: '',
-  jobDescription: '',
+  companyName: "",
+  jobTitle: "",
+  jobDescription: "",
   minSalary: null,
   maxSalary: null,
-  requiredSkills: '',
-  jobAppeal: '',
-  workLocation: ''
-})
+  requiredSkills: "",
+  jobAppeal: "",
+  workLocation: "",
+});
 
-const history = ref([])
-const comment = ref('')
-const reapplyTarget = ref('')
-const currentUser = ref(null)
+const history = ref([]);
+const comment = ref("");
+const reapplyTarget = ref("");
+const currentUser = ref(null);
+const reasonGenres = ref([]);
+const selectedReasonKeys = ref([]);
+const isGenreModalOpen = ref(false);
+const newGenreName = ref("");
 
-const reasons = ref({
-  integrity: false,
-  accuracy: false,
-  structure: false,
-  expression: false,
-  claim: false,
-  typo: false
-})
-
-const readCurrentUser = () => currentUser.value || {}
-const currentUserPositionId = computed(() => Number(readCurrentUser()?.position_id ?? 0))
-const isAdminReviewer = computed(() => currentUserPositionId.value === 3)
+const readCurrentUser = () => currentUser.value || {};
+const currentUserPositionId = computed(() =>
+  Number(readCurrentUser()?.position_id ?? 0),
+);
+const isAdminReviewer = computed(() => currentUserPositionId.value === 3);
 
 const ensureCurrentUser = async () => {
   if (currentUser.value) {
-    return currentUser.value
+    return currentUser.value;
   }
 
   try {
-    currentUser.value = await getMeApi()
+    currentUser.value = await getMeApi();
   } catch (e) {
-    console.error('ユーザー取得エラー', e)
-    currentUser.value = null
+    console.error("ユーザー取得エラー", e);
+    currentUser.value = null;
   }
 
-  return currentUser.value
-}
+  return currentUser.value;
+};
+
+const refreshReasonGenres = async () => {
+  try {
+    reasonGenres.value = await fetchMyGenres();
+    const currentKeys = new Set(
+      reasonGenres.value.map((genre) => `genre:${genre.genre_id}`),
+    );
+    selectedReasonKeys.value = selectedReasonKeys.value.filter((key) =>
+      currentKeys.has(key),
+    );
+  } catch (e) {
+    console.error("ジャンル取得エラー", e);
+    reasonGenres.value = [];
+  }
+};
+
+const openGenreModal = () => {
+  isGenreModalOpen.value = true;
+};
+
+const closeGenreModal = () => {
+  isGenreModalOpen.value = false;
+  newGenreName.value = "";
+};
+
+const handleAddGenre = async () => {
+  const name = newGenreName.value.trim();
+  if (!name) {
+    alert("ジャンル名を入力してください");
+    return;
+  }
+
+  try {
+    reasonGenres.value = await addMyGenre(name);
+    newGenreName.value = "";
+  } catch (e) {
+    console.error("ジャンル追加エラー", e);
+    alert("ジャンル追加に失敗しました");
+  }
+};
+
+const handleDeleteGenre = async (genreId) => {
+  if (
+    !confirm(
+      "このジャンルを削除しますか？（自分のロールへの紐付けのみ削除されます）",
+    )
+  ) {
+    return;
+  }
+
+  try {
+    reasonGenres.value = await deleteMyGenre(Number(genreId));
+    const key = `genre:${genreId}`;
+    selectedReasonKeys.value = selectedReasonKeys.value.filter(
+      (item) => item !== key,
+    );
+  } catch (e) {
+    console.error("ジャンル削除エラー", e);
+    alert("ジャンル削除に失敗しました");
+  }
+};
 
 /* 初期表示（DB取得） */
 onMounted(async () => {
@@ -164,124 +309,118 @@ onMounted(async () => {
     const [data] = await Promise.all([
       fetchApprovalDetail(String(id)),
       ensureCurrentUser(),
-    ])
+      refreshReasonGenres(),
+    ]);
 
-    scout.value.body = data.scoutBody
-    jobInfo.value = data.jobInfo
-    history.value = data.commentHistories || []
+    scout.value.body = data.scoutBody;
+    jobInfo.value = data.jobInfo;
+    history.value = data.commentHistories || [];
   } catch (e) {
-    console.error('取得エラー', e)
+    console.error("取得エラー", e);
   }
-})
+});
 
 const formatDate = (value) => {
   if (!value) {
-    return '日時不明'
+    return "日時不明";
   }
 
-  const date = new Date(value)
+  const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    return '日時不明'
+    return "日時不明";
   }
 
-  return date.toLocaleString('ja-JP')
-}
+  return date.toLocaleString("ja-JP");
+};
 
 const formatSalary = (min, max) => {
   if (min == null && max == null) {
-    return '未設定'
+    return "未設定";
   }
 
-  const minText = min == null ? '' : `${Number(min).toLocaleString()}円`
-  const maxText = max == null ? '' : `${Number(max).toLocaleString()}円`
+  const minText = min == null ? "" : `${Number(min).toLocaleString()}円`;
+  const maxText = max == null ? "" : `${Number(max).toLocaleString()}円`;
 
   if (minText && maxText) {
-    return `${minText} - ${maxText}`
+    return `${minText} - ${maxText}`;
   }
 
-  return minText || maxText || '未設定'
-}
-
+  return minText || maxText || "未設定";
+};
 
 /* 承認 */ //承認者が営業承認者か、管理者かで、ステータス変更が変わる。
 const approve = async () => {
-  const user = await ensureCurrentUser()
-  const approverEmployeeId =
-    user?.employee_id || ''
+  const user = await ensureCurrentUser();
+  const approverEmployeeId = user?.employee_id || "";
 
   if (!approverEmployeeId) {
-    alert('承認者IDが取得できません')
-    return
+    alert("承認者IDが取得できません");
+    return;
   }
-
-  const reasonKeys = Object.entries(reasons.value)
-    .filter(([, checked]) => checked)
-    .map(([key]) => key)
 
   try {
     await approveScout({
       id: String(id),
       approverEmployeeId,
       comment: comment.value.trim(),
-      reasonKeys
-    })
+      reasonKeys: selectedReasonKeys.value,
+    });
 
-    router.push('/scout/list')
+    router.push("/scout/list");
   } catch (e) {
-    console.error('承認エラー', e)
-    alert('承認に失敗しました')
-  } 
-}
+    console.error("承認エラー", e);
+    alert("承認に失敗しました");
+  }
+};
 
 /* 差戻し */
 const reject = async () => {
-  const returnComment = comment.value.trim()
+  const returnComment = comment.value.trim();
 
   if (!returnComment) {
-    alert('コメントを入力してください')
-    return
+    alert("コメントを入力してください");
+    return;
   }
 
   if (returnComment.length > 2000) {
-    alert('コメントは2000文字以内で入力してください')
-    return
+    alert("コメントは2000文字以内で入力してください");
+    return;
   }
 
-  const user = await ensureCurrentUser()
-  const returnedByEmployeeId =
-    user?.employee_id || ''
+  const user = await ensureCurrentUser();
+  const returnedByEmployeeId = user?.employee_id || "";
 
   if (!returnedByEmployeeId) {
-    alert('差戻し担当者IDが取得できません')
-    return
+    alert("差戻し担当者IDが取得できません");
+    return;
   }
 
-  if (isAdminReviewer.value && reapplyTarget.value !== 'APPROVER' && reapplyTarget.value !== 'ADMIN') {
-    alert('再申請先を選択してください')
-    return
+  if (
+    isAdminReviewer.value &&
+    reapplyTarget.value !== "APPROVER" &&
+    reapplyTarget.value !== "ADMIN"
+  ) {
+    alert("再申請先を選択してください");
+    return;
   }
-
-  const reasonKeys = Object.entries(reasons.value)
-    .filter(([, checked]) => checked)
-    .map(([key]) => key)
 
   try {
     await rejectScout({
       id: String(id),
       returnedByEmployeeId,
       returnComment,
-      reasonKeys,
-      reapplyTarget: isAdminReviewer.value ? reapplyTarget.value : undefined
-    })
+      reasonKeys: selectedReasonKeys.value,
+      reapplyTarget: isAdminReviewer.value ? reapplyTarget.value : undefined,
+    });
   } catch (e) {
-    console.error('差戻しエラー', e)
-    alert('差戻しに失敗しました')
-    return
+    console.error("差戻しエラー", e);
+    alert("差戻しに失敗しました");
+    return;
   }
 
   // 一覧へ戻る（図の最後）
-  router.push('/scout/list')
-}
+  router.push("/scout/list");
+};
 </script>
 
 <style scoped>
@@ -489,6 +628,34 @@ textarea::placeholder {
   box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
+.check-area-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.genre-manage-btn {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.genre-manage-btn:hover {
+  border-color: #9ca3af;
+}
+
+.genre-empty {
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .check-area label {
   display: flex;
   align-items: center;
@@ -511,6 +678,113 @@ textarea::placeholder {
   cursor: pointer;
   accent-color: #374151;
   flex-shrink: 0;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+
+.genre-modal {
+  width: min(680px, 100%);
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.genre-modal-head {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.genre-modal-head h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #1f2937;
+}
+
+.modal-close-btn {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.genre-modal-content {
+  padding: 16px 20px 20px;
+}
+
+.genre-add-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.genre-add-row input {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+.genre-add-btn {
+  height: 38px;
+  border: 1px solid #374151;
+  background: #374151;
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.genre-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow: auto;
+}
+
+.genre-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: #1f2937;
+}
+
+.genre-delete-btn {
+  border: 1px solid #dc2626;
+  background: #ffffff;
+  color: #dc2626;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 /* ボタン */
@@ -655,6 +929,10 @@ textarea::placeholder {
     width: 100%;
     min-width: 0;
   }
+
+  .genre-add-row {
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 480px) {
@@ -675,5 +953,3 @@ textarea::placeholder {
   }
 }
 </style>
-
-
