@@ -6,6 +6,7 @@ import {
 } from "vue-router";
 import Login from "../views/auth/Login.vue";
 import ChangePassword from "../views/auth/ChangePassword.vue";
+import Forbidden from "../views/auth/Forbidden.vue";
 import UserList from "../views/admin/UserList.vue";
 import UserDetail from "../views/admin/UserDetail.vue";
 import UserEdit from "../views/admin/UserEdit.vue";
@@ -20,6 +21,10 @@ import { useLoginStore } from "../store/login.Store";
 
 const getHomePath = () => "/scout/list";
 
+// ルートごとに position_id の許可一覧を指定するための共通キー。
+// 例: meta: { requiresAuth: true, allowedPositionIds: [1, 2] }
+const DEFAULT_ALLOWED_POSITION_IDS = [1, 2, 3]; // デフォルトで許可する position_id のリスト
+
 const routes: RouteRecordRaw[] = [
   {
     path: "/",
@@ -29,6 +34,12 @@ const routes: RouteRecordRaw[] = [
     path: "/login",
     name: "login",
     component: Login,
+  },
+  {
+    path: "/forbidden",
+    name: "forbidden",
+    component: Forbidden,
+    meta: { requiresAuth: true },
   },
   {
     path: "/scout/create",
@@ -52,7 +63,11 @@ const routes: RouteRecordRaw[] = [
     path: "/scout/list",
     name: "scout-list",
     component: ScoutList,
-    meta: { requiresAuth: true },
+    meta: {
+      requiresAuth: true,
+      // URLごとに許可IDを変えるときはここを書き換える
+      // allowedPositionIds: [1, 2],
+    },
   },
   {
     path: "/review/:id",
@@ -71,25 +86,25 @@ const routes: RouteRecordRaw[] = [
     path: "/admin/users",
     name: "user-list",
     component: UserList,
-    meta: { requiresAuth: true, roles: ["admin"] },
+    meta: { requiresAuth: true, roles: ["admin"], allowedPositionIds: [1] },
   },
   {
     path: "/admin/users/new",
     name: "user-create",
     component: UserCreate,
-    meta: { requiresAuth: true, roles: ["admin"] },
+    meta: { requiresAuth: true, roles: ["admin"], allowedPositionIds: [1] },
   },
   {
     path: "/admin/users/:id",
     name: "user-detail",
     component: UserDetail,
-    meta: { requiresAuth: true, roles: ["admin"] },
+    meta: { requiresAuth: true, roles: ["admin"], allowedPositionIds: [1] },
   },
   {
     path: "/admin/users/:id/edit",
     name: "user-edit",
     component: UserEdit,
-    meta: { requiresAuth: true, roles: ["admin"] },
+    meta: { requiresAuth: true, roles: ["admin"], allowedPositionIds: [1] },
   },
   {
     path: "/auth/change-password",
@@ -111,6 +126,14 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
     await loginStore.checkSession();
   }
 
+  const hasValidSession = loginStore.isLoggedIn;
+  const userPositionId = loginStore.user?.position_id ?? null;
+  const routeAllowedPositionIds =
+    (to.meta.allowedPositionIds as number[] | undefined) ??
+    DEFAULT_ALLOWED_POSITION_IDS;
+  const isAllowedPosition =
+    userPositionId !== null && routeAllowedPositionIds.includes(userPositionId);
+
   if (to.path === "/" && loginStore.isLoggedIn) {
     return getHomePath();
   }
@@ -125,8 +148,17 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
     return true;
   }
 
-  if (to.meta.requiresAuth && !loginStore.isLoggedIn) {
+  if (to.meta.requiresAuth && !hasValidSession) {
+    loginStore.user = null;
+    loginStore.error = "";
     return "/login";
+  }
+
+  if (to.meta.requiresAuth && !isAllowedPosition && to.path !== "/forbidden") {
+    return {
+      path: "/forbidden",
+      query: { message: "権限がありません" },
+    };
   }
   return true;
 });
