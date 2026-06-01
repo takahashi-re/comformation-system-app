@@ -10,6 +10,9 @@
 		</div>
 		<div class="actions">
 			<button type="button" @click="goEdit">編集</button>
+			<button type="button" :disabled="isResetting || isLoading" @click="handleResetPassword">
+				{{ isResetting ? 'リセット中...' : 'パスワードリセット' }}
+			</button>
 			<button type="button" class="danger" :disabled="isDeleting || isLoading" @click="handleDelete">
 				{{ isDeleting ? '削除中...' : '削除' }}
 			</button>
@@ -21,7 +24,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { deleteUserById, fetchUserById } from '../../api/userApi'
+import { deleteUserById, fetchUserById, resetUserPassword } from '../../api/userApi'
 import type { User, UserRole } from '../../type/user'
 
 const route = useRoute()
@@ -31,6 +34,7 @@ const userId = computed(() => String(route.params.id ?? ''))
 const user = ref<User | null>(null)
 const isLoading = ref(false)
 const isDeleting = ref(false)
+const isResetting = ref(false)
 const errorMessage = ref('')
 
 const roleLabels: Record<UserRole, string> = {
@@ -39,13 +43,20 @@ const roleLabels: Record<UserRole, string> = {
 	sales: '営業担当',
 }
 
+const isUserRole = (value: unknown): value is UserRole => {
+	return value === 'admin' || value === 'approver' || value === 'sales'
+}
+
 const displayName = computed(() => user.value?.fullName ?? user.value?.username ?? '-')
 const roleLabel = computed(() => {
 	if (!user.value) {
 		return '-'
 	}
-	const role = user.value.role
-	return roleLabels[role] ?? role
+	const role = user.value.role as unknown
+	if (isUserRole(role)) {
+		return roleLabels[role]
+	}
+	return typeof role === 'string' ? role : '-'
 })
 
 const loadUser = async (): Promise<void> => {
@@ -81,6 +92,24 @@ const handleDelete = async (): Promise<void> => {
 		window.alert('ユーザーの削除に失敗しました')
 	} finally {
 		isDeleting.value = false
+	}
+}
+
+const handleResetPassword = async (): Promise<void> => {
+	const confirmed = window.confirm('このユーザーのパスワードをユーザーIDにリセットします。よろしいですか？')
+	if (!confirmed) {
+		return
+	}
+
+	isResetting.value = true
+	try {
+		await resetUserPassword(userId.value)
+		window.alert('パスワードをリセットしました')
+	} catch (error) {
+		console.error('パスワードリセットエラー:', error)
+		window.alert('パスワードのリセットに失敗しました')
+	} finally {
+		isResetting.value = false
 	}
 }
 
@@ -123,6 +152,11 @@ onMounted(() => {
 }
 
 .danger:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.actions button:disabled {
 	opacity: 0.6;
 	cursor: not-allowed;
 }

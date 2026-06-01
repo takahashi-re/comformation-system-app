@@ -141,3 +141,7 @@ export async function createUser(payload: CreateUserRequest): Promise<User> {
   const { data } = await apiClient.post('/api/users', payload)
   return toUser(data as RawUser)
 }
+
+export async function resetUserPassword(userId: string): Promise<void> {
+  await apiClient.post(`/api/users/${userId}/reset-password`)
+}
