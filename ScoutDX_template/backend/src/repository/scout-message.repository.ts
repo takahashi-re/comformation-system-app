@@ -101,18 +101,42 @@ export class ScoutMessageRepository {
     return rows[0];
   }
 
+
   async findById(id: string): Promise<any | null> {
     const rows = await this.dataSource.query(
       `
         SELECT
-          scout_message_id::text AS id,
-          created_at,
-          COALESCE(created_by_employee_id, '') AS creator,
+          sm.scout_message_id::text AS id,
+          sm.created_at,
+          COALESCE(sm.created_by_employee_id, '') AS creator,
+          COALESCE(e.name, '') AS creator_name,
           '' AS title,
-          COALESCE(message_content, '') AS body,
-          COALESCE(status, 'DRAFT') AS status
-        FROM SCOUT_MESSAGES
-        WHERE scout_message_id = $1
+          COALESCE(sm.message_content, '') AS body,
+          COALESCE(sm.status, 'DRAFT') AS status,
+          js.age AS candidate_age,
+          COALESCE(js.gender, '') AS candidate_gender,
+          COALESCE(js.desired_position, '') AS candidate_desired_position,
+          COALESCE(updated_emp.name, '') AS updated_by_name,
+          COALESCE(returned_emp.name, '') AS returned_by_name,
+          COALESCE(returned_emp.name, updated_emp.name, '') AS reviewer_name
+        FROM SCOUT_MESSAGES sm
+        LEFT JOIN EMPLOYEES e
+          ON e.employee_id = sm.created_by_employee_id
+        LEFT JOIN JOB_SEEKERS js
+          ON js.job_seeker_id = sm.job_seeker_id
+        LEFT JOIN EMPLOYEES updated_emp
+          ON updated_emp.employee_id = sm.updated_by_employee_id
+        LEFT JOIN LATERAL (
+          SELECT
+            h.returned_by_employee_id
+          FROM SCOUT_MESSAGE_HISTORIES h
+          WHERE h.scout_message_id = sm.scout_message_id
+          ORDER BY h.returned_at DESC NULLS LAST, h.scout_message_history_id DESC
+          LIMIT 1
+        ) latest_history ON TRUE
+        LEFT JOIN EMPLOYEES returned_emp
+          ON returned_emp.employee_id = latest_history.returned_by_employee_id
+        WHERE sm.scout_message_id = $1
         LIMIT 1
       `,
       [Number(id)],
