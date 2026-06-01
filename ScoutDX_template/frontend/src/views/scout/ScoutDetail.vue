@@ -18,7 +18,7 @@
 
   <div class="row">
     <div class="label">求人情報</div>
-    <div class="value">{{ detail.jobInfo }}</div>
+    <div class="value multiline">{{ detail.jobInfo }}</div>
   </div>
 
   <div class="row">
@@ -58,6 +58,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { fetchScoutDetail } from '../../api/scoutApi'
+import { SCOUT_STATUS_LABEL } from '../../shared/scoutStatus'
 
 const route = useRoute()
 
@@ -67,6 +68,25 @@ const toGenderLabel = (value) => {
   if (normalized === 'female' || normalized === 'f' || normalized === '女性') return '女性'
   if (normalized === 'other' || normalized === 'others' || normalized === 'non-binary' || normalized === 'その他') return 'その他'
   return '-'
+}
+
+const toDisplayValue = (value) => {
+  const str = String(value ?? '').trim()
+  return str ? str : '-'
+}
+
+const toDateTimeLabel = (value) => {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return toDisplayValue(value)
+  return date.toLocaleString('ja-JP')
+}
+
+const toStatusLabel = (value) => {
+  const status = String(value ?? '').trim()
+  if (!status) return '-'
+  if (status === 'SENT') return '送信済み'
+  return SCOUT_STATUS_LABEL[status] ?? status
 }
 
 const detail = ref({
@@ -91,14 +111,30 @@ onMounted(async () => {
     const candidateInfo = [
       `年齢: ${scout.candidate_age ?? '-'}`,
       `性別: ${toGenderLabel(scout.candidate_gender)}`,
-      `希望職種: ${scout.candidate_desired_position || '-'}`,
+      `希望職種: ${toDisplayValue(scout.candidate_desired_position)}`,
     ].join(' / ')
+
+    const jobInfo = [
+      `会社名: ${toDisplayValue(scout.company_name)}`,
+      `職種名: ${toDisplayValue(scout.job_title)}`,
+      `仕事内容: ${toDisplayValue(scout.job_description)}`,
+      `最低年収: ${scout.min_salary ?? '-'}`,
+      `最高年収: ${scout.max_salary ?? '-'}`,
+      `必須スキル: ${toDisplayValue(scout.required_skills)}`,
+      `求人の魅力: ${toDisplayValue(scout.job_appeal)}`,
+      `勤務地: ${toDisplayValue(scout.work_location)}`,
+    ].join('\n')
 
     detail.value = {
       ...detail.value,
-      creator: scout.creator_name || '-',
+      creator: toDisplayValue(scout.creator_name || scout.created_by_employee_id || scout.creator),
       candidate: candidateInfo,
-      reviewer: scout.returned_by_name || scout.updated_by_name || scout.reviewer_name || '-'
+      createdAt: toDateTimeLabel(scout.created_at),
+      status: toStatusLabel(scout.status),
+      jobInfo,
+      body: toDisplayValue(scout.body),
+      reviewer: toDisplayValue(scout.returned_by_name || scout.updated_by_name || scout.reviewer_name || scout.updated_by_employee_id),
+      comment: toDisplayValue(scout.latest_reject_comment || data?.latestRejectComment)
     }
   } catch (e) {
     console.error('データ取得エラー', e)
@@ -144,6 +180,10 @@ h2 {
 .value {
   padding: 8px;
   background: #fff;
+}
+
+.multiline {
+  white-space: pre-wrap;
 }
 
 /* 下の2カラム */

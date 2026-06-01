@@ -109,26 +109,39 @@ export class ScoutMessageRepository {
           sm.scout_message_id::text AS id,
           sm.created_at,
           COALESCE(sm.created_by_employee_id, '') AS creator,
-          COALESCE(e.name, '') AS creator_name,
+          COALESCE(creator_emp.name, '') AS creator_name,
           '' AS title,
           COALESCE(sm.message_content, '') AS body,
           COALESCE(sm.status, 'DRAFT') AS status,
+          sm.job_posting_id,
           js.age AS candidate_age,
           COALESCE(js.gender, '') AS candidate_gender,
           COALESCE(js.desired_position, '') AS candidate_desired_position,
+          COALESCE(jp.company_name, '') AS company_name,
+          COALESCE(jp.job_title, '') AS job_title,
+          COALESCE(jp.job_description, '') AS job_description,
+          jp.min_salary,
+          jp.max_salary,
+          COALESCE(jp.required_skills, '') AS required_skills,
+          COALESCE(jp.job_appeal, '') AS job_appeal,
+          COALESCE(jp.work_location, '') AS work_location,
+          COALESCE(latest_history.return_comment, '') AS latest_reject_comment,
           COALESCE(updated_emp.name, '') AS updated_by_name,
           COALESCE(returned_emp.name, '') AS returned_by_name,
           COALESCE(returned_emp.name, updated_emp.name, '') AS reviewer_name
         FROM SCOUT_MESSAGES sm
-        LEFT JOIN EMPLOYEES e
-          ON e.employee_id = sm.created_by_employee_id
+        LEFT JOIN EMPLOYEES creator_emp
+          ON creator_emp.employee_id = sm.created_by_employee_id
         LEFT JOIN JOB_SEEKERS js
           ON js.job_seeker_id = sm.job_seeker_id
+        LEFT JOIN JOB_POSTINGS jp
+          ON jp.job_posting_id = sm.job_posting_id
         LEFT JOIN EMPLOYEES updated_emp
           ON updated_emp.employee_id = sm.updated_by_employee_id
         LEFT JOIN LATERAL (
           SELECT
-            h.returned_by_employee_id
+            h.returned_by_employee_id,
+            h.return_comment
           FROM SCOUT_MESSAGE_HISTORIES h
           WHERE h.scout_message_id = sm.scout_message_id
           ORDER BY h.returned_at DESC NULLS LAST, h.scout_message_history_id DESC
