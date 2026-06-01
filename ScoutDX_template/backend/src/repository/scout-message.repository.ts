@@ -101,8 +101,6 @@ export class ScoutMessageRepository {
     return rows[0];
   }
 
-<<<<<<< HEAD
-
   async findById(id: string): Promise<any | null> {
     const rows = await this.dataSource.query(
       `
@@ -155,27 +153,6 @@ export class ScoutMessageRepository {
       `,
       [Number(id)],
     );
-
-    return rows[0] ?? null;
-  }
-=======
-  async findById(id: string): Promise<any | null> {
-    const rows = await this.dataSource.query(
-      `
-        SELECT
-          scout_message_id::text AS id,
-          created_at,
-          COALESCE(created_by_employee_id, '') AS creator,
-          '' AS title,
-          COALESCE(message_content, '') AS body,
-          COALESCE(status, 'DRAFT') AS status
-        FROM SCOUT_MESSAGES
-        WHERE scout_message_id = $1
-        LIMIT 1
-      `,
-      [Number(id)],
-    );
->>>>>>> origin/main
 
     return rows[0] ?? null;
   }
@@ -301,12 +278,10 @@ export class ScoutMessageRepository {
       [Number(id)],
     );
 
-    return rows[0]?.return_comment ?? "";
+    return rows[0]?.return_comment ?? '';
   }
 
   async saveGeneratedMessage(messageContent: string): Promise<number> {
-    await this.syncPrimaryKeySequence();
-
     const rows = await this.dataSource.query(
       `
         INSERT INTO SCOUT_MESSAGES (
@@ -388,8 +363,6 @@ export class ScoutMessageRepository {
       throw new Error("job_posting_id と job_seeker_id は必須です");
     }
 
-    await this.syncPrimaryKeySequence();
-
     const rows = await this.dataSource.query(
       `
         INSERT INTO SCOUT_MESSAGES (
@@ -433,8 +406,6 @@ export class ScoutMessageRepository {
     if (!input.job_posting_id || !input.job_seeker_id) {
       throw new Error("job_posting_id と job_seeker_id は必須です");
     }
-
-    await this.syncPrimaryKeySequence();
 
     const rows = await this.dataSource.query(
       `
@@ -596,14 +567,6 @@ export class ScoutMessageRepository {
         await runner.rollbackTransaction();
         return null;
       }
-
-      await runner.query(`
-        SELECT setval(
-          pg_get_serial_sequence('SCOUT_MESSAGE_HISTORIES', 'scout_message_history_id'),
-          COALESCE((SELECT MAX(scout_message_history_id) FROM SCOUT_MESSAGE_HISTORIES), 0) + 1,
-          false
-        )
-      `);
 
       const current = currentRows[0];
       const historyRows = await runner.query(

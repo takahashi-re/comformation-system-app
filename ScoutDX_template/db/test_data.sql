@@ -168,7 +168,7 @@ INSERT INTO SCOUT_MESSAGES (
     NOW(),
     1,
     1,
-    'H0002',
+    'H0003',
     'H0001',
     'SENT',
     NOW(),
