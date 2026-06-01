@@ -131,7 +131,7 @@
       </div>
 
       <!-- 共通：生成文条件編集 -->
-      <div v-if="role !== 'sales'" style="margin-top:20px; text-align:center;">
+      <div v-if="role === 'approver' || role === 'admin'" style="margin-top:20px; text-align:center;">
         <button class="create-btn" @click="goConditions">
           生成文条件編集
         </button>
@@ -235,6 +235,28 @@ export default {
       return parts.join("、");
     },
 
+    toGenderLabel(gender) {
+      const normalized = String(gender ?? "").trim().toLowerCase();
+      if (["male", "m", "男性"].includes(normalized)) return "男性";
+      if (["female", "f", "女性"].includes(normalized)) return "女性";
+      if (["other", "others", "non-binary", "その他"].includes(normalized)) {
+        return "その他";
+      }
+      return "不明";
+    },
+
+    toAgeGroup(age) {
+      const raw = String(age ?? "").trim();
+      const decadeText = raw.match(/^(\d{2})代$/);
+      if (decadeText) {
+        return `${decadeText[1]}代`;
+      }
+      const n = Number(age);
+      if (!Number.isFinite(n) || n <= 0) return "不明";
+      const d = Math.floor(n / 10) * 10;
+      return `${d}代`;
+    },
+
     isEditable(status) {
       return ["下書き", "承認者差戻し", "管理者差戻し"].includes(status);
     },
@@ -267,7 +289,7 @@ export default {
     },
 
     goConditions() {
-      this.$router.push("/conditions");
+      this.$router.push({ name: "conditions" });
     },
 
     selectAll() {
