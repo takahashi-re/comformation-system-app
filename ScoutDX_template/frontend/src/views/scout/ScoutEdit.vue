@@ -111,92 +111,217 @@ const submit = async () => {
 
 <style scoped>
 .container {
-  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
 }
 
 /* メイン左右 */
 .main {
   display: flex;
-  gap: 20px;
+  gap: 24px;
+  align-items: flex-start;
 }
 
 /* 左側：スカウト入力 */
 .left {
   flex: 2;
+  min-width: 0;
 }
 
 /* 右側：コメント */
 .right {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
 
 /* タイトルバー */
 .box-title {
-  background: #2f6da3;
+  background: #475569;
   color: white;
-  padding: 6px 10px;
-  font-weight: bold;
+  padding: 12px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  border-radius: 8px 8px 0 0;
+}
+
+/* 中身 */
+.box-content {
+  border: 1px solid #cbd5e1;
+  border-top: none;
+  background: #ffffff;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 /* テキストエリア（大きく） */
 .textarea {
   width: 100%;
-  height: 100%; /* 親要素に合わせる */
+  min-height: 500px;
   border: none;
-  resize: none;
-  padding: 10px;
-  background: transparent;
-  box-sizing: border-box; /* パディングを含めてサイズを計算 */
-  font-size: 16px;
-  font-family: Arial, sans-serif;
+  resize: vertical;
+  padding: 20px;
+  background: #ffffff;
+  box-sizing: border-box;
+  font-size: 15px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.7;
+  color: #1f2937;
+  transition: background-color 0.2s ease;
 }
 
-/* 中身 */
-.box-content {
-  border: 1px solid #ccc;
-  background: #fff;
-  padding: 0; /* パディングを削除 */
-  height: 350px; /* テキストエリアと同じ高さに */
+.textarea:focus {
+  outline: none;
+  background: #f9fafb;
+}
+
+.textarea::placeholder {
+  color: #9ca3af;
 }
 
 /* コメントボックス */
 .comment-box {
-  height: 330px;
-  background: #fff;
-  border: none;
-  padding: 10px;
-  font-size: 16px;
-  font-family: Arial, sans-serif;
+  min-height: 500px;
+  background: #f9fafb;
+  padding: 20px;
+  font-size: 15px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.7;
+  color: #4b5563;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-/* ボタン */
+/* ボタンエリア */
 .actions {
   display: flex;
   justify-content: flex-end;
-  gap: 20px;
-  margin-top: 20px;
+  gap: 16px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
 }
 
 /* ボタン共通 */
 .btn {
-  padding: 10px 40px;
+  min-width: 140px;
+  padding: 11px 32px;
   border: none;
   cursor: pointer;
-  font-weight: bold;
-  border: 2px solid #020303;
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  letter-spacing: -0.01em;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
 }
 
-/* 保存 */
+/* 保存ボタン */
 .save {
-  background-color: #3c78b4;
-  color: white;
+  background: #ffffff;
+  color: #374151;
+  border: 1.5px solid #d1d5db;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
-/* 申請 */
+.save:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.08);
+}
+
+.save:active {
+  background: #f3f4f6;
+}
+
+/* 申請ボタン */
 .submit {
-  background-color: #3c78b4;
+  background: #1f2937;
   color: white;
+  border: 1.5px solid #1f2937;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.1);
+}
+
+.submit:hover {
+  background: #374151;
+  border-color: #374151;
+  box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.15);
+}
+
+.submit:active {
+  background: #111827;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1024px) {
+  .main {
+    flex-direction: column;
+  }
+
+  .left,
+  .right {
+    flex: 1;
+    width: 100%;
+  }
+
+  .textarea,
+  .comment-box {
+    min-height: 350px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 32px 16px 48px;
+  }
+
+  .main {
+    gap: 20px;
+  }
+
+  .box-title {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .textarea,
+  .comment-box {
+    padding: 16px;
+    font-size: 14px;
+    min-height: 300px;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+
+  .btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 24px 12px 40px;
+  }
+
+  .box-title {
+    font-size: 13px;
+    padding: 8px 14px;
+  }
+
+  .textarea,
+  .comment-box {
+    font-size: 13px;
+    padding: 14px;
+  }
 }
 </style>
