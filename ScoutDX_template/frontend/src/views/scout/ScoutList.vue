@@ -105,10 +105,7 @@
         </div>
       </div>
 
-      <div
-        v-if="role === 'approver' || role === 'admin'"
-        style="margin-top: 20px; text-align: center"
-      >
+      <div v-if="role === 'admin'" style="margin-top: 20px; text-align: center">
         <button class="create-btn" @click="goConditions">生成文条件編集</button>
       </div>
     </div>
@@ -305,6 +302,7 @@ export default {
     },
 
     goConditions() {
+      if (this.role !== "admin") return;
       this.$router.push({ name: "conditions" });
     },
 
