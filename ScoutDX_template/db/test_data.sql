@@ -235,6 +235,18 @@ INSERT INTO SCOUT_MESSAGES (
     'AVAILABLE',
     NOW(),
     NOW()
+  ),
+  (
+    9,
+    'Your profile strongly matches our growth-stage frontend platform role and we would like to proceed to final review.',
+    NULL,
+    2,
+    2,
+    'H0003',
+    'H0002',
+    'PENDING_ADMIN',
+    NOW(),
+    NOW()
   )
 ON CONFLICT (scout_message_id) DO NOTHING;
 
