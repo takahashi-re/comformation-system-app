@@ -31,6 +31,13 @@ export interface RejectScoutMessageInput {
   next_status?: string | null;
 }
 
+export interface ApproveScoutMessageInput {
+  scout_message_id: number;
+  approved_by_employee_id?: string | null;
+  comment?: string | null;
+  next_status: string;
+}
+
 export interface CreateScoutMessageInput {
   message_content: string;
   job_posting_id: number;
@@ -528,6 +535,105 @@ export class ScoutMessageRepository {
     }
 
     return rows[0];
+  }
+
+  async approveAndSaveHistory(
+    input: ApproveScoutMessageInput,
+  ): Promise<ScoutMessageRow | null> {
+    const runner = this.dataSource.createQueryRunner();
+    await runner.connect();
+    await runner.startTransaction();
+
+    try {
+      const currentRows = await runner.query(
+        `
+          SELECT
+            scout_message_id,
+            message_content,
+            sent_at,
+            job_posting_id,
+            job_seeker_id,
+            created_by_employee_id,
+            updated_by_employee_id,
+            status,
+            created_at,
+            updated_at
+          FROM SCOUT_MESSAGES
+          WHERE scout_message_id = $1
+          LIMIT 1
+        `,
+        [input.scout_message_id],
+      );
+
+      if (!currentRows.length) {
+        await runner.rollbackTransaction();
+        return null;
+      }
+
+      await runner.query(`
+        SELECT setval(
+          pg_get_serial_sequence('SCOUT_MESSAGE_HISTORIES', 'scout_message_history_id'),
+          COALESCE((SELECT MAX(scout_message_history_id) FROM SCOUT_MESSAGE_HISTORIES), 0) + 1,
+          false
+        )
+      `);
+
+      const current = currentRows[0];
+      await runner.query(
+        `
+          INSERT INTO SCOUT_MESSAGE_HISTORIES (
+            scout_message_id,
+            message_content,
+            return_comment,
+            returned_by_employee_id,
+            returned_at,
+            sent_at
+          )
+          VALUES ($1, $2, $3, $4, NOW(), $5)
+        `,
+        [
+          input.scout_message_id,
+          current.message_content,
+          input.comment?.trim() || null,
+          input.approved_by_employee_id ?? null,
+          current.sent_at,
+        ],
+      );
+
+      const updatedRows = await runner.query(
+        `
+          UPDATE SCOUT_MESSAGES
+          SET status = $2,
+              updated_by_employee_id = $3,
+              updated_at = NOW()
+          WHERE scout_message_id = $1
+          RETURNING
+            scout_message_id,
+            message_content,
+            sent_at,
+            job_posting_id,
+            job_seeker_id,
+            created_by_employee_id,
+            updated_by_employee_id,
+            status,
+            created_at,
+            updated_at
+        `,
+        [
+          input.scout_message_id,
+          input.next_status,
+          input.approved_by_employee_id ?? null,
+        ],
+      );
+
+      await runner.commitTransaction();
+      return updatedRows[0] ?? null;
+    } catch (error) {
+      await runner.rollbackTransaction();
+      throw error;
+    } finally {
+      await runner.release();
+    }
   }
 
   async approve(
