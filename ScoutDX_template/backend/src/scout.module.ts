@@ -9,6 +9,7 @@ import { EmployeeRepository } from "./repository/employee.repository";
 import { LoginRepository } from "./repository/login.repository";
 import { JobPostingRepository } from "./repository/job-posting.repository";
 import { JobSeekerRepository } from "./repository/job-seeker.repository";
+import { ReturnCommentGenreRepository } from "./repository/return-comment-genre.repository";
 import { ScoutMessageRepository } from "./repository/scout-message.repository";
 import { AiGenerateService } from "./service/ai-generate.service";
 import { AIConfigService } from "./service/ai-config.service";
@@ -31,6 +32,7 @@ import { ScoutEntity } from "./type/scout";
   providers: [
     ScoutService,
     ScoutMessageRepository,
+    ReturnCommentGenreRepository,
     JobPostingRepository,
     JobSeekerRepository,
     AiGenerateService,
