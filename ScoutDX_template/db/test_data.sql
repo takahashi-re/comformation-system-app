@@ -4,9 +4,21 @@ BEGIN;
 -- Master / Settings
 -- =====================================
 INSERT INTO NG_WORDS (ng_word_id, ng_word) VALUES
-  (1, 'ブラック企業'),
-  (2, '即日退職'),
-  (3, 'ノルマ地獄')
+  (1, '必ず'),
+  (2, '絶対に'),
+  (3, '誰でも'),
+  (4, '簡単に'),
+  (5, '確実に'),
+  (6, '今だけ'),
+  (7, '早い者勝ち'),
+  (8, '限定'),
+  (9, '日本人限定'),
+  (10, '外国人NG'),
+  (11, '女性限定'),
+  (12, '男性歓迎'),
+  (13, '既婚者歓迎'),
+  (14, '若手限定'),
+  (15, '高収入保証')
 ON CONFLICT (ng_word_id) DO NOTHING;
 
 INSERT INTO MAX_TEXT_LENGTH (length_id, max_length) VALUES
