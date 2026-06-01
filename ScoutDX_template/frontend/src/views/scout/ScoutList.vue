@@ -17,14 +17,35 @@
           <ScoutListRow
             v-for="scout in filteredScouts"
             :key="scout.id"
-            :scout="scout"
-            :role="role"
-            :selected-columns="selectedColumns"
-            :row-class="getRowClass(scout.statusLabel)"
-            @detail="goDetail"
-            @edit="goEdit"
-            @review="goReview"
-          />
+            :class="getRowClass(scout.statusLabel)"
+          >
+            <!-- 概要 -->
+            <td>
+              {{ formattedSummary(scout) }}
+            </td>
+
+            <!-- ボタン -->
+            <td class="action-cell">
+              <!-- 詳細 -->
+              <button @click="goDetail(scout.id)">詳細</button>
+
+              <!-- 営業 -->
+              <button
+                v-if="role === 'sales' && isEditable(scout.statusLabel)"
+                @click="goEdit(scout.id)"
+              >
+                編集
+              </button>
+
+              <!-- 承認・差戻し（対象ステータスのみ） -->
+              <button
+                v-if="canReview(scout.status)"
+                @click="goReview(scout.id)"
+              >
+                承認・差戻し
+              </button>
+            </td>
+          </tr>
         </tbody>
       </table>
 
@@ -228,6 +249,54 @@ export default {
         console.error(e);
         this.scouts = [];
       }
+    },
+
+    // ✅ 表示まとめ
+    formattedSummary(scout) {
+      const parts = [];
+
+      if (this.selectedColumns.includes("company")) {
+        parts.push(`会社名：${scout.company}`);
+      }
+      if (this.selectedColumns.includes("job")) {
+        parts.push(`職種：${scout.job}`);
+      }
+      if (this.selectedColumns.includes("status")) {
+        parts.push(`ステータス：${scout.statusLabel}`);
+      }
+
+      return parts.join("、");
+    },
+
+    toGenderLabel(gender) {
+      const normalized = String(gender ?? "").trim().toLowerCase();
+      if (["male", "m", "男性"].includes(normalized)) return "男性";
+      if (["female", "f", "女性"].includes(normalized)) return "女性";
+      if (["other", "others", "non-binary", "その他"].includes(normalized)) {
+        return "その他";
+      }
+      return "不明";
+    },
+
+    toAgeGroup(age) {
+      const raw = String(age ?? "").trim();
+      const decadeText = raw.match(/^(\d{2})代$/);
+      if (decadeText) {
+        return `${decadeText[1]}代`;
+      }
+      const n = Number(age);
+      if (!Number.isFinite(n) || n <= 0) return "不明";
+      const d = Math.floor(n / 10) * 10;
+      return `${d}代`;
+    },
+
+    isEditable(status) {
+      return ["下書き", "承認者差戻し", "管理者差戻し"].includes(status);
+    },
+
+    canReview(status) {
+      const canAccessReview = this.role === "approver" || this.role === "admin";
+      return canAccessReview && ["PENDING_APPROVER", "REJECTED_BY_ADMIN"].includes(status);
     },
 
     getRowClass(status) {
