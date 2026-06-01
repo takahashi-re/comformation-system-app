@@ -3,6 +3,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { AiGenerateController } from "./controller/ai-generate.controller";
 import { LoginController } from "./controller/login.controller";
 import { ScoutController } from "./controller/scout.controller";
+import { EmployeeRepository } from "./repository/employee.repository";
 import { LoginRepository } from "./repository/login.repository";
 import { ScoutMessageRepository } from "./repository/scout-message.repository";
 import { AiGenerateService } from "./service/ai-generate.service";
@@ -20,6 +21,7 @@ import { ScoutEntity } from "./type/scout";
     AiGenerateService,
     LoginService,
     LoginRepository,
+    EmployeeRepository,
   ],
 })
 export class ScoutModule {}
