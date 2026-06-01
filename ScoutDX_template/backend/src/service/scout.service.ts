@@ -1,16 +1,67 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { AIConfigRepository } from '../repository/ai-config.repository';
 import { EmployeeRepository } from '../repository/employee.repository';
+import { ReturnCommentGenreRepository } from '../repository/return-comment-genre.repository';
 import { ScoutMessageRepository } from '../repository/scout-message.repository';
 import { ScoutEntity } from '../type/scout';
 
 @Injectable()
 export class ScoutService {
+  private readonly reasonKeyToGenreName: Record<string, string> = {
+    integrity: 'Facts and Consistency',
+    accuracy: 'Tone and Politeness',
+    structure: 'Tone and Politeness',
+    expression: 'Compliance and Risk',
+    claim: 'Compliance and Risk',
+    typo: 'Tone and Politeness',
+  };
+
   constructor(
     private readonly scoutRepository: ScoutMessageRepository,
     private readonly employeeRepository: EmployeeRepository,
     private readonly aiConfigRepository: AIConfigRepository,
+    private readonly returnCommentGenreRepository: ReturnCommentGenreRepository,
   ) {}
+
+  private async resolveGenreIdsFromReasonKeys(reasonKeys: string[]): Promise<number[]> {
+    const normalizedKeys = [...new Set((reasonKeys ?? []).filter((key) => key?.trim()))];
+    if (!normalizedKeys.length) {
+      return [];
+    }
+
+    const unknownKeys = normalizedKeys.filter((key) => !this.reasonKeyToGenreName[key]);
+    if (unknownKeys.length) {
+      throw new BadRequestException(`未対応の差戻し理由キーです: ${unknownKeys.join(', ')}`);
+    }
+
+    const genres = await this.returnCommentGenreRepository.findAllGenres();
+    const genreNameToId = new Map<string, number>(
+      genres.map((genre) => [genre.genre_name, Number(genre.genre_id)]),
+    );
+
+    const unresolvedGenreNames: string[] = [];
+    const genreIds = normalizedKeys
+      .map((key) => {
+        const genreName = this.reasonKeyToGenreName[key];
+        const genreId = genreNameToId.get(genreName);
+
+        if (!genreId) {
+          unresolvedGenreNames.push(genreName);
+          return null;
+        }
+
+        return genreId;
+      })
+      .filter((genreId): genreId is number => genreId !== null);
+
+    if (unresolvedGenreNames.length) {
+      throw new BadRequestException(
+        `差戻し理由マスタに存在しないジャンルがあります: ${[...new Set(unresolvedGenreNames)].join(', ')}`,
+      );
+    }
+
+    return [...new Set(genreIds)];
+  }
 
   private normalizeText(value: string): string {
     return value.toLowerCase();
@@ -217,11 +268,13 @@ export class ScoutService {
       ? 'REJECTED_BY_APPROVER'
       : 'REJECTED_BY_ADMIN';
 
+    const genreIds = await this.resolveGenreIdsFromReasonKeys(dto.reasonKeys);
+
     const updated = await this.scoutRepository.rejectAndSaveHistory({
       scout_message_id: scoutMessageId,
       return_comment: returnComment,
       returned_by_employee_id: returnedByEmployeeId,
-      genre_ids: [],
+      genre_ids: genreIds,
       next_status: nextStatus,
     });
 
