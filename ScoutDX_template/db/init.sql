@@ -101,7 +101,6 @@ CREATE TABLE IF NOT EXISTS SCOUT_MESSAGES (
   job_posting_id INTEGER,
   job_seeker_id INTEGER,
   created_by_employee_id VARCHAR(20),
-  updated_by_employee_id VARCHAR(20),
   approved_primary_by_employee_id VARCHAR(20),
   approved_secondary_by_employee_id VARCHAR(20),
   status VARCHAR(50),
@@ -110,7 +109,6 @@ CREATE TABLE IF NOT EXISTS SCOUT_MESSAGES (
   FOREIGN KEY (job_posting_id) REFERENCES JOB_POSTINGS(job_posting_id) ON DELETE SET NULL,
   FOREIGN KEY (job_seeker_id) REFERENCES JOB_SEEKERS(job_seeker_id) ON DELETE SET NULL,
   FOREIGN KEY (created_by_employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE SET NULL,
-  FOREIGN KEY (updated_by_employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE SET NULL,
   FOREIGN KEY (approved_primary_by_employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE SET NULL,
   FOREIGN KEY (approved_secondary_by_employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE SET NULL
 );

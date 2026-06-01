@@ -1,6 +1,5 @@
 <template>
   <div class="scout-create">
-
     <!-- メインコンテンツ -->
     <main class="page-content">
       <h1 class="page-title">求人情報入力</h1>
@@ -46,7 +45,9 @@
 
           <!-- 業務内容 -->
           <div class="form-group">
-            <label for="businessContent" class="form-label required">業務内容</label>
+            <label for="businessContent" class="form-label required"
+              >業務内容</label
+            >
             <textarea
               id="businessContent"
               v-model="jobInfo.businessContent"
@@ -63,7 +64,9 @@
 
           <!-- 必須スキル -->
           <div class="form-group">
-            <label for="requiredSkills" class="form-label required">必須スキル</label>
+            <label for="requiredSkills" class="form-label required"
+              >必須スキル</label
+            >
             <textarea
               id="requiredSkills"
               v-model="jobInfo.requiredSkills"
@@ -135,7 +138,9 @@
 
           <!-- 求人の魅力 -->
           <div class="form-group">
-            <label for="appealPoints" class="form-label required">求人の魅力</label>
+            <label for="appealPoints" class="form-label required"
+              >求人の魅力</label
+            >
             <textarea
               id="appealPoints"
               v-model="jobInfo.appealPoints"
@@ -198,7 +203,9 @@
 
           <!-- 希望職種 -->
           <div class="form-group">
-            <label for="desiredJobTitle" class="form-label required">希望職種</label>
+            <label for="desiredJobTitle" class="form-label required"
+              >希望職種</label
+            >
             <input
               id="desiredJobTitle"
               v-model="applicantInfo.desiredJobTitle"
@@ -234,10 +241,7 @@
         <!-- 文体指定 -->
         <section class="form-section text-style-section">
           <h2 class="section-title-alt">文体指定</h2>
-          <select
-            class="form-select"
-            v-model="textStyle"
-          >
+          <select class="form-select" v-model="textStyle">
             <option
               v-for="option in textStyleOptions"
               :key="option.value"
@@ -265,128 +269,128 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
-import { apiClient } from '../../api/client'
+import { ref, reactive } from "vue";
+import { useRouter } from "vue-router";
+import { apiClient } from "../../api/client";
 
 // 求人情報
 interface JobInfo {
-  companyName: string
-  jobTitle: string
-  businessContent: string
-  requiredSkills: string
-  location: string
-  minSalary: number | null
-  maxSalary: number | null
-  appealPoints: string
+  companyName: string;
+  jobTitle: string;
+  businessContent: string;
+  requiredSkills: string;
+  location: string;
+  minSalary: number | null;
+  maxSalary: number | null;
+  appealPoints: string;
 }
 
 // 求職者情報
 interface ApplicantInfo {
-  gender: string
-  age: number | null
-  desiredJobTitle: string
-  aiInstructions: string
+  gender: string;
+  age: number | null;
+  desiredJobTitle: string;
+  aiInstructions: string;
 }
 
 interface ScoutGenerateRequest {
-  jobInfo: JobInfo
-  applicantInfo: ApplicantInfo
-  textStyle: 'casual' | 'formal'
+  jobInfo: JobInfo;
+  applicantInfo: ApplicantInfo;
+  textStyle: "casual" | "formal";
 }
 
 interface ScoutGenerateResponse {
-  body: string
-  scoutId: string
+  body: string;
+  scoutId: string;
 }
 
-const router = useRouter()
+const router = useRouter();
 
 // フォームデータ
 const jobInfo = reactive<JobInfo>({
-  companyName: '',
-  jobTitle: '',
-  businessContent: '',
-  requiredSkills: '',
-  location: '',
+  companyName: "",
+  jobTitle: "",
+  businessContent: "",
+  requiredSkills: "",
+  location: "",
   minSalary: null,
   maxSalary: null,
-  appealPoints: ''
-})
+  appealPoints: "",
+});
 
 const applicantInfo = reactive<ApplicantInfo>({
-  gender: '',
+  gender: "",
   age: null,
-  desiredJobTitle: '',
-  aiInstructions: ''
-})
+  desiredJobTitle: "",
+  aiInstructions: "",
+});
 
 // ローディング状態
 // const isLoading = ref(false)
-const isGenerating = ref(false)
-const textStyle = ref<'casual' | 'formal'>('formal')
+const isGenerating = ref(false);
+const textStyle = ref<"casual" | "formal">("formal");
 
 const textStyleOptions = [
-  { label: 'カジュアル', value: 'casual' },
-  { label: 'フォーマル', value: 'formal' }
-]
+  { label: "カジュアル", value: "casual" },
+  { label: "フォーマル", value: "formal" },
+];
 
 // バリデーションエラー
-const errors = reactive<Record<string, string>>({})
+const errors = reactive<Record<string, string>>({});
 
 // 性別選択肢
 const genderOptions = [
-  { label: '男性', value: 'male' },
-  { label: '女性', value: 'female' },
-  { label: '不問', value: 'any' }
-]
+  { label: "男性", value: "male" },
+  { label: "女性", value: "female" },
+  { label: "不問", value: "any" },
+];
 
 // バリデーション
 const validateForm = (): boolean => {
   // エラーをクリア
-  Object.keys(errors).forEach(key => delete errors[key])
+  Object.keys(errors).forEach((key) => delete errors[key]);
 
   // 必須項目チェック
   if (!jobInfo.companyName) {
-    errors.companyName = '会社名を入力してください'
+    errors.companyName = "会社名を入力してください";
   } else if (jobInfo.companyName.length > 255) {
-    errors.companyName = '会社名は255文字以内で入力してください'
+    errors.companyName = "会社名は255文字以内で入力してください";
   }
 
   if (!jobInfo.jobTitle) {
-    errors.jobTitle = '職種を入力してください'
+    errors.jobTitle = "職種を入力してください";
   } else if (jobInfo.jobTitle.length > 255) {
-    errors.jobTitle = '職種は255文字以内で入力してください'
+    errors.jobTitle = "職種は255文字以内で入力してください";
   }
 
   if (!jobInfo.businessContent) {
-    errors.businessContent = '業務内容を入力してください'
+    errors.businessContent = "業務内容を入力してください";
   } else if (jobInfo.businessContent.length > 2000) {
-    errors.businessContent = '業務内容は2000文字以内で入力してください'
+    errors.businessContent = "業務内容は2000文字以内で入力してください";
   }
 
   if (!jobInfo.requiredSkills) {
-    errors.requiredSkills = '必須スキルを入力してください'
+    errors.requiredSkills = "必須スキルを入力してください";
   } else if (jobInfo.requiredSkills.length > 2000) {
-    errors.requiredSkills = '必須スキルは2000文字以内で入力してください'
+    errors.requiredSkills = "必須スキルは2000文字以内で入力してください";
   }
 
   if (!jobInfo.location) {
-    errors.location = '勤務地を入力してください'
+    errors.location = "勤務地を入力してください";
   } else if (jobInfo.location.length > 255) {
-    errors.location = '勤務地は255文字以内で入力してください'
+    errors.location = "勤務地は255文字以内で入力してください";
   }
 
   if (jobInfo.minSalary === null || Number.isNaN(jobInfo.minSalary)) {
-    errors.minSalary = '最小給与を入力してください'
-  } else if (typeof jobInfo.minSalary !== 'number' || jobInfo.minSalary < 0) {
-    errors.minSalary = '最小給与は0以上の数値で入力してください'
+    errors.minSalary = "最小給与を入力してください";
+  } else if (typeof jobInfo.minSalary !== "number" || jobInfo.minSalary < 0) {
+    errors.minSalary = "最小給与は0以上の数値で入力してください";
   }
 
   if (jobInfo.maxSalary === null || Number.isNaN(jobInfo.maxSalary)) {
-    errors.maxSalary = '最大給与を入力してください'
-  } else if (typeof jobInfo.maxSalary !== 'number' || jobInfo.maxSalary < 0) {
-    errors.maxSalary = '最大給与は0以上の数値で入力してください'
+    errors.maxSalary = "最大給与を入力してください";
+  } else if (typeof jobInfo.maxSalary !== "number" || jobInfo.maxSalary < 0) {
+    errors.maxSalary = "最大給与は0以上の数値で入力してください";
   }
 
   if (
@@ -396,68 +400,71 @@ const validateForm = (): boolean => {
     !Number.isNaN(jobInfo.maxSalary) &&
     jobInfo.minSalary > jobInfo.maxSalary
   ) {
-    errors.maxSalary = '最大給与は最小給与以上で入力してください'
+    errors.maxSalary = "最大給与は最小給与以上で入力してください";
   }
 
   if (!jobInfo.appealPoints) {
-    errors.appealPoints = '求人の魅力を入力してください'
+    errors.appealPoints = "求人の魅力を入力してください";
   } else if (jobInfo.appealPoints.length > 2000) {
-    errors.appealPoints = '求人の魅力は2000文字以内で入力してください'
+    errors.appealPoints = "求人の魅力は2000文字以内で入力してください";
   }
 
   if (!applicantInfo.gender) {
-    errors.gender = '性別を選択してください'
+    errors.gender = "性別を選択してください";
   }
 
   if (applicantInfo.age === null || Number.isNaN(applicantInfo.age)) {
-    errors.age = '年齢を入力してください'
+    errors.age = "年齢を入力してください";
   } else if (applicantInfo.age < 0 || applicantInfo.age > 100) {
-    errors.age = '年齢は0〜100の範囲で入力してください'
+    errors.age = "年齢は0〜100の範囲で入力してください";
   }
 
   if (!applicantInfo.desiredJobTitle) {
-    errors.desiredJobTitle = '希望職種を入力してください'
+    errors.desiredJobTitle = "希望職種を入力してください";
   } else if (applicantInfo.desiredJobTitle.length > 255) {
-    errors.desiredJobTitle = '希望職種は255文字以内で入力してください'
+    errors.desiredJobTitle = "希望職種は255文字以内で入力してください";
   }
 
-  if (applicantInfo.aiInstructions && applicantInfo.aiInstructions.length > 2000) {
-    errors.aiInstructions = 'AI指示は2000文字以内で入力してください'
+  if (
+    applicantInfo.aiInstructions &&
+    applicantInfo.aiInstructions.length > 2000
+  ) {
+    errors.aiInstructions = "AI指示は2000文字以内で入力してください";
   }
 
-  return Object.keys(errors).length === 0
-}
+  return Object.keys(errors).length === 0;
+};
 
 // スカウト文作成（バックエンド生成）
 const handleCreateScout = async () => {
   // バリデーション
   if (!validateForm()) {
-    window.alert('入力内容に誤りがあります')
-    return
+    window.alert("入力内容に誤りがあります");
+    return;
   }
 
   try {
-    isGenerating.value = true
+    isGenerating.value = true;
 
     const requestData: ScoutGenerateRequest = {
       jobInfo,
       applicantInfo,
-      textStyle: textStyle.value
-    }
+      textStyle: textStyle.value,
+    };
 
-    const { data } = await apiClient.post<ScoutGenerateResponse>('/api/ai/generate', requestData)
-    sessionStorage.setItem('generatedScoutMessage', data.body)
-    window.alert('スカウト文を生成しました')
-    router.push(`/scout/${data.scoutId}/edit`)
-    
+    const { data } = await apiClient.post<ScoutGenerateResponse>(
+      "/api/ai/generate",
+      requestData,
+    );
+    sessionStorage.setItem("generatedScoutMessage", data.body);
+    router.push(`/scout/${data.scoutId}/edit`);
   } catch (error) {
-    console.error('スカウト文生成エラー:', error)
-    window.alert('スカウト文の生成に失敗しました。もう一度お試しください。')
+    console.error("スカウト文生成エラー:", error);
+    window.alert("スカウト文の生成に失敗しました。もう一度お試しください。");
   } finally {
-    isGenerating.value = false
+    isGenerating.value = false;
   }
-}
-
+};
 </script>
 
 <style scoped>
