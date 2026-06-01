@@ -34,7 +34,9 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import axios from "axios";
 import { fetchScoutDetail, updateScout } from "../../api/scoutApi";
+import { fetchAIConfig } from "../../api/aiConfigApi";
 
 const route = useRoute();
 const router = useRouter();
@@ -48,13 +50,41 @@ const scout = ref({
 
 const latestRejectComment = ref(null);
 const loading = ref(true);
+const ngWords = ref([]);
+const maxLength = ref(Infinity);
+
+function normalizeText(value) {
+  return String(value ?? "").toLowerCase();
+}
+
+function findIncludedNgWords(text, words) {
+  const normalizedText = normalizeText(text);
+
+  return words.filter((word) => {
+    const normalizedWord = normalizeText(word).trim();
+    return normalizedWord.length > 0 && normalizedText.includes(normalizedWord);
+  });
+}
+
+function resolveNextStatus(currentStatus) {
+  const status = String(currentStatus ?? "").trim();
+
+  if (status === "REJECTED_BY_ADMIN") {
+    return "PENDING_ADMIN";
+  }
+
+  return "PENDING_APPROVER";
+}
 
 // 初期表示（DBから取得）
 onMounted(async () => {
   loading.value = true;
 
   try {
-    const res = await fetchScoutDetail(scoutId);
+    const [res, config] = await Promise.all([
+      fetchScoutDetail(scoutId),
+      fetchAIConfig(),
+    ]);
 
     // 最新スカウト文
     scout.value = res.scout;
@@ -64,6 +94,10 @@ onMounted(async () => {
 
     // ここでテキストエリアに反映
     scout.value.body = res.scout.body;
+
+    ngWords.value = Array.isArray(config?.ngWords) ? config.ngWords : [];
+    maxLength.value =
+      Number(config?.maxLength) > 0 ? Number(config.maxLength) : 100;
   } finally {
     loading.value = false;
   }
@@ -90,22 +124,52 @@ const saveDraft = async () => {
  */
 const submit = async () => {
   // バリデーションチェック（図の分岐）
-  if (!scout.value.body || scout.value.body.trim() === "") {
+  const body = String(scout.value.body ?? "");
+
+  if (!body.trim()) {
     alert("スカウト文を入力してください");
     return;
   }
-  //NGワード、文字数チェック実装などもここで行う。フロントでやるか、バックでやるか？？？
 
-  await updateScout({
-    id: scout.value.id,
-    body: scout.value.body,
-    status: "PENDING_APPROVER", // 承認者承認待ち
-  });
+  const hitWords = findIncludedNgWords(body, ngWords.value);
+  if (hitWords.length > 0) {
+    alert(`NGワードが含まれています: ${hitWords.join(", ")}`);
+    return;
+  }
 
-  alert("申請しました");
+  if (body.length > maxLength.value) {
+    alert(
+      `文字数が上限を超えています（${body.length}/${maxLength.value}文字）`,
+    );
+    return;
+  }
 
-  // 一覧へ戻る（図の最後）
-  router.push("/scout/list");
+  try {
+    const nextStatus = resolveNextStatus(scout.value.status);
+
+    await updateScout({
+      id: scout.value.id,
+      body,
+      status: nextStatus,
+    });
+
+    alert("申請しました");
+
+    // 一覧へ戻る（図の最後）
+    router.push("/scout/list");
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const responseData = error.response?.data;
+      const message =
+        responseData && typeof responseData === "object" && "message" in responseData
+          ? String(responseData.message || "申請に失敗しました")
+          : "申請に失敗しました";
+      alert(message);
+      return;
+    }
+
+    alert("申請に失敗しました");
+  }
 };
 </script>
 
@@ -168,7 +232,9 @@ const submit = async () => {
   background: #ffffff;
   box-sizing: border-box;
   font-size: 15px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial,
+    sans-serif;
   line-height: 1.7;
   color: #1f2937;
   transition: background-color 0.2s ease;
@@ -189,7 +255,9 @@ const submit = async () => {
   background: #f9fafb;
   padding: 20px;
   font-size: 15px;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial,
+    sans-serif;
   line-height: 1.7;
   color: #4b5563;
   white-space: pre-wrap;
@@ -217,7 +285,9 @@ const submit = async () => {
   border-radius: 6px;
   transition: all 0.2s ease;
   letter-spacing: -0.01em;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial,
+    sans-serif;
 }
 
 /* 保存ボタン */

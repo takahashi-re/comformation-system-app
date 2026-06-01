@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { AIConfigRepository } from '../repository/ai-config.repository';
 import { EmployeeRepository } from '../repository/employee.repository';
 import { ScoutMessageRepository } from '../repository/scout-message.repository';
 import { ScoutEntity } from '../type/scout';
@@ -8,7 +9,34 @@ export class ScoutService {
   constructor(
     private readonly scoutRepository: ScoutMessageRepository,
     private readonly employeeRepository: EmployeeRepository,
+    private readonly aiConfigRepository: AIConfigRepository,
   ) {}
+
+  private normalizeText(value: string): string {
+    return value.toLowerCase();
+  }
+
+  private findIncludedNgWords(text: string, ngWords: string[]): string[] {
+    const normalizedText = this.normalizeText(text);
+    const hits: string[] = [];
+    const seen = new Set<string>();
+
+    for (const rawWord of ngWords) {
+      const word = String(rawWord ?? '').trim();
+      const normalizedWord = this.normalizeText(word);
+
+      if (!normalizedWord) {
+        continue;
+      }
+
+      if (normalizedText.includes(normalizedWord) && !seen.has(normalizedWord)) {
+        seen.add(normalizedWord);
+        hits.push(word);
+      }
+    }
+
+    return hits;
+  }
 
   async findAll(): Promise<ScoutEntity[]> {
     const rows = await this.scoutRepository.findAllActive();
@@ -62,7 +90,36 @@ export class ScoutService {
   }
 
   async update(id: string, dto: { body: string, status: string }) {
-    return this.scoutRepository.updateScout(id, dto.body, dto.status);
+    const body = String(dto.body ?? '');
+    const status = String(dto.status ?? '').trim();
+
+    if (!body.trim()) {
+      throw new BadRequestException('スカウト文を入力してください');
+    }
+
+    if (status === 'PENDING_APPROVER' || status === 'PENDING_ADMIN') {
+      const config = await this.aiConfigRepository.getConfig();
+      const ngWords = Array.isArray(config?.ngWords) ? config.ngWords : [];
+      const maxLength = Number(config?.maxLength) > 0 ? Number(config.maxLength) : 100;
+
+      const hitWords = this.findIncludedNgWords(body, ngWords);
+      if (hitWords.length > 0) {
+        throw new BadRequestException(`NGワードが含まれています: ${hitWords.join(', ')}`);
+      }
+
+      if (body.length > maxLength) {
+        throw new BadRequestException(
+          `文字数が上限を超えています（${body.length}/${maxLength}文字）`,
+        );
+      }
+    }
+
+    const updated = await this.scoutRepository.updateScout(id, body, status);
+    if (!updated) {
+      throw new NotFoundException('対象のスカウト文が見つかりません');
+    }
+
+    return updated;
   }
 
   async approve(
