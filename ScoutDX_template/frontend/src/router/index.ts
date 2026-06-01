@@ -16,7 +16,7 @@ import ScoutEdit from "../views/scout/ScoutEdit.vue";
 import ScoutList from "../views/scout/ScoutList.vue";
 import ApprovalDetail from "../views/approval/ApprovalDetail.vue";
 import AIConfig from "../views/setting/AIConfig.vue";
-import { clearLogin, getToken } from "../api/loginApi";
+import { useLoginStore } from "../store/login.Store";
 
 const getHomePath = () => "/scout/list";
 
@@ -104,20 +104,28 @@ export const router = createRouter({
   routes,
 });
 
-router.beforeEach((to: RouteLocationNormalized) => {
-  const isLoggedIn = Boolean(getToken());
+router.beforeEach(async (to: RouteLocationNormalized) => {
+  const loginStore = useLoginStore();
 
-  if (to.path === "/" && isLoggedIn) {
+  if (to.meta.requiresAuth && !loginStore.isLoggedIn) {
+    await loginStore.checkSession();
+  }
+
+  if (to.path === "/" && loginStore.isLoggedIn) {
     return getHomePath();
   }
 
   if (to.path === "/login") {
-    // /login へ来た場合は強制ログアウトするが、遷移自体は許可する
-    clearLogin();
+    if (loginStore.isLoggedIn) {
+      await loginStore.logout();
+    } else {
+      loginStore.user = null;
+      loginStore.error = "";
+    }
     return true;
   }
 
-  if (to.meta.requiresAuth && !isLoggedIn) {
+  if (to.meta.requiresAuth && !loginStore.isLoggedIn) {
     return "/login";
   }
   return true;

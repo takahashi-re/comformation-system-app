@@ -142,7 +142,7 @@
 
 <script>
 import { fetchScouts } from "../../api/scoutApi";
-import { getUser } from "../../api/loginApi";
+import { useLoginStore } from "../../store/login.Store";
 
 const STATUS_MAP = {
   DRAFT: "下書き",
@@ -163,7 +163,7 @@ export default {
 
   data() {
     return {
-      positionId: getUser()?.position_id ?? 1,
+      loginStore: useLoginStore(),
       filterStatus: "",
       filterCompany: "",
       filterJob: "",
@@ -173,6 +173,9 @@ export default {
   },
 
   computed: {
+    positionId() {
+      return this.loginStore.user?.position_id ?? 1;
+    },
     // ✅ ロール判定
     role() {
       if (this.positionId === 1) return "sales";
