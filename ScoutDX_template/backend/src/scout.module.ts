@@ -4,6 +4,7 @@ import { AiGenerateController } from "./controller/ai-generate.controller";
 import { AIConfigController } from "./controller/ai-config.controller";
 import { LoginController } from "./controller/login.controller";
 import { ScoutController } from "./controller/scout.controller";
+import { UserController } from "./controller/user.controller";
 import { EmployeeRepository } from "./repository/employee.repository";
 import { LoginRepository } from "./repository/login.repository";
 import { JobPostingRepository } from "./repository/job-posting.repository";

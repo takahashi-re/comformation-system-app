@@ -157,7 +157,8 @@ INSERT INTO SCOUT_MESSAGES (
   job_posting_id,
   job_seeker_id,
   created_by_employee_id,
-  updated_by_employee_id,
+  approved_primary_by_employee_id,
+  approved_secondary_by_employee_id,
   status,
   created_at,
   updated_at
@@ -170,6 +171,7 @@ INSERT INTO SCOUT_MESSAGES (
     1,
     'H0002',
     'H0002',
+    'H0001',
     'SENT',
     NOW(),
     NOW()
@@ -181,7 +183,8 @@ INSERT INTO SCOUT_MESSAGES (
     2,
     2,
     'H0003',
-    'H0003',
+    NULL,
+    NULL,
     'DRAFT',
     NOW(),
     NOW()
@@ -195,7 +198,8 @@ INSERT INTO SCOUT_MESSAGES (
   job_posting_id,
   job_seeker_id,
   created_by_employee_id,
-  updated_by_employee_id,
+  approved_primary_by_employee_id,
+  approved_secondary_by_employee_id,
   status,
   created_at,
   updated_at
@@ -207,7 +211,8 @@ INSERT INTO SCOUT_MESSAGES (
     3,
     4,
     'H0003',
-    'H0003',
+    NULL,
+    NULL,
     'PENDING_APPROVER',
     NOW(),
     NOW()
@@ -219,7 +224,8 @@ INSERT INTO SCOUT_MESSAGES (
     4,
     5,
     'H0003',
-    'H0002',
+    NULL,
+    NULL,
     'REJECTED_BY_APPROVER',
     NOW(),
     NOW()
@@ -231,6 +237,7 @@ INSERT INTO SCOUT_MESSAGES (
     1,
     1,
     'H0003',
+    'H0002',
     'H0001',
     'AVAILABLE',
     NOW(),
@@ -244,6 +251,7 @@ INSERT INTO SCOUT_MESSAGES (
     2,
     'H0003',
     'H0002',
+    NULL,
     'PENDING_ADMIN',
     NOW(),
     NOW()
