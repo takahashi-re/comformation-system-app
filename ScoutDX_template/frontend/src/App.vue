@@ -58,47 +58,134 @@ const handleLogout = async (): Promise<void> => {
 <style scoped>
 .app-shell {
   min-height: 100vh;
-  background: #f5f7fb;
+  background: #f9fafb;
 }
 
 .app-header {
-  background: #1f3c88;
-  color: #fff;
-  padding: 12px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
 }
 
 .app-nav {
+  max-width: 1600px;
+  margin: 0 auto;
   display: flex;
-  gap: 14px;
+  gap: 8px;
   align-items: center;
   flex-wrap: wrap;
+  padding: 16px 24px;
 }
 
 .nav-link {
-  color: #fff;
+  color: #4b5563;
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 500;
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  letter-spacing: -0.01em;
+}
+
+.nav-link:hover {
+  color: #1f2937;
+  background: #f3f4f6;
 }
 
 .nav-link.router-link-active {
-  text-decoration: underline;
+  color: #1f2937;
+  background: #f3f4f6;
+  font-weight: 600;
 }
 
 .user-name {
   margin-left: auto;
-  font-weight: 600;
+  font-weight: 500;
+  font-size: 14px;
+  color: #6b7280;
+  padding: 8px 12px;
+  letter-spacing: -0.01em;
 }
 
 .logout-button {
-  border: 1px solid #fff;
-  background: transparent;
-  color: #fff;
-  padding: 6px 10px;
-  border-radius: 4px;
+  min-width: 100px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
   cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: -0.01em;
+  background: #ffffff;
+  color: #374151;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.logout-button:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #1f2937;
+}
+
+.logout-button:active {
+  background: #f3f4f6;
 }
 
 .app-main {
-  padding: 16px;
+  min-height: calc(100vh - 64px);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+  .app-nav {
+    padding: 12px 16px;
+    gap: 6px;
+  }
+
+  .nav-link {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+
+  .user-name {
+    font-size: 13px;
+    padding: 6px 8px;
+    margin-left: 0;
+    width: 100%;
+    order: -1;
+    text-align: right;
+  }
+
+  .logout-button {
+    font-size: 13px;
+    padding: 6px 16px;
+    min-width: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-nav {
+    padding: 10px 12px;
+  }
+
+  .nav-link {
+    font-size: 12px;
+    padding: 5px 10px;
+  }
+
+  .user-name {
+    font-size: 12px;
+  }
+
+  .logout-button {
+    font-size: 12px;
+    padding: 5px 14px;
+  }
 }
 </style>

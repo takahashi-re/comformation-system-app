@@ -80,8 +80,11 @@ export default {
 
 <style scoped>
 td {
-  padding: 8px;
-  border-bottom: 1px solid #ccc;
+  padding: 16px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+  color: #1f2937;
+  line-height: 1.6;
 }
 
 .action-cell {
@@ -89,17 +92,70 @@ td {
   justify-content: center;
   align-items: center;
   gap: 8px;
-  text-align: center;
-  border-bottom: none;
-  border-left: 2px solid #bfc9d6;
-  padding: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+  border-left: 1px solid #f3f4f6;
+}
+
+.action-cell button {
+  min-width: 80px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1.5px solid #d1d5db;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: -0.01em;
+  background: #ffffff;
+  color: #374151;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.action-cell button:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.action-cell button:active {
+  background: #f3f4f6;
 }
 
 .returned {
-  background: #efe2c0;
+  background: #fef3c7;
 }
 
 .approved {
-  background: #cfe3cf;
+  background: #d1fae5;
+}
+
+tr:hover td {
+  background: inherit;
+}
+
+tr.returned:hover td {
+  background: #fde68a;
+}
+
+tr.approved:hover td {
+  background: #a7f3d0;
+}
+
+@media (max-width: 768px) {
+  td {
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .action-cell {
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+  }
+
+  .action-cell button {
+    width: 100%;
+  }
 }
 </style>

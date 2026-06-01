@@ -286,151 +286,393 @@ const reject = async () => {
 
 <style scoped>
 .container {
-  background:  #f5f7fb;
-  padding: 0px 16px 8px 16px;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+  background: #f9fafb;
 }
 
-
+h2 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  margin: 0 0 32px;
+  color: #1f2937;
+}
 
 /* メイン */
 .main {
   display: flex;
-  gap: 16px;
-  margin-top: 16px;
+  gap: 24px;
 }
 
 /* 左右 */
 .left {
   flex: 2;
+  min-width: 0;
 }
 
 .right {
   flex: 1;
+  min-width: 320px;
 }
 
 /* 共通BOX */
 .box {
-  border: 1px solid #999;
-  background: white;
-  margin-bottom: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  margin-bottom: 20px;
 }
 
 .title {
-  background: #2f6da3;
+  background: #475569;
   color: white;
-  padding: 6px;
+  padding: 12px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
 }
 
 .content {
-  padding: 10px;
-  background: #fff;
+  padding: 20px;
+  background: #ffffff;
   min-height: 120px;
+  font-size: 14px;
+  color: #1f2937;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.content > div {
+  margin-bottom: 12px;
+}
+
+.content > div:last-child {
+  margin-bottom: 0;
+}
+
+.content strong {
+  color: #374151;
+  font-weight: 600;
 }
 
 .large {
-  min-height: 220px;
+  min-height: 280px;
 }
 
 /* 下2列 */
 .bottom-row {
   display: flex;
-  gap: 10px;
-align-items: stretch;
+  gap: 20px;
+  align-items: stretch;
 }
 
 .bottom-row .box {
-flex: 1;
-min-width: 320px;
+  flex: 1;
+  min-width: 0;
 }
 
 .bottom-row .content {
-min-height: 220px;
+  min-height: 280px;
 }
 
 .history-item {
-  margin-bottom: 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
 }
 
 .history-meta {
-  margin-bottom: 4px;
-  color: #4b5563;
-  font-size: 0.85rem;
+  margin-bottom: 6px;
+  color: #6b7280;
+  font-size: 12px;
+  font-weight: 500;
 }
 
-
-/* コメント */
 /* コメント */
 textarea {
   display: block;
-  width: 100%;          /* 95% -> 100% */
+  width: 100%;
   height: 240px;
   border: none;
-  padding: 10px;
-  resize: none;
+  border-top: 1px solid #f3f4f6;
+  padding: 16px 20px;
+  resize: vertical;
   box-sizing: border-box;
-  background: #fff;  /* 任意: content系と揃える */
+  background: #ffffff;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1f2937;
+  line-height: 1.6;
+  transition: background-color 0.2s ease;
+}
+
+textarea:focus {
+  outline: none;
+  background: #f9fafb;
+}
+
+textarea::placeholder {
+  color: #9ca3af;
 }
 
 .right .box {
-  overflow: hidden;     /* はみ出し対策 */
+  overflow: hidden;
 }
 
 .reapply-target {
-  margin: 0 10px 10px;
+  padding: 16px 20px;
+  background: #f9fafb;
+  border-top: 1px solid #f3f4f6;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+}
+
+.reapply-target label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  letter-spacing: -0.01em;
 }
 
 .reapply-target select {
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 6px;
+  width: 100%;
+  height: 38px;
+  padding: 0 12px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #1f2937;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%234b5563' d='M4.427 6.427l3.396 3.396a.25.25 0 00.354 0l3.396-3.396A.25.25 0 0011.396 6H4.604a.25.25 0 00-.177.427z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 36px;
+}
+
+.reapply-target select:hover {
+  border-color: #9ca3af;
+}
+
+.reapply-target select:focus {
+  outline: none;
+  border-color: #374151;
+  box-shadow: 0 0 0 3px rgba(55, 65, 81, 0.1);
 }
 
 /* チェック */
 .check-area {
-  margin: 10px 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
   display: flex;
-  flex-direction: column; /* 縦並び */
-  gap: 8px;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 .check-area label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  writing-mode: horizontal-tb; /* 文字を横書きに固定 */
+  gap: 10px;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  padding: 4px 0;
+}
+
+.check-area label:hover {
+  color: #1f2937;
+}
+
+.check-area input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #374151;
+  flex-shrink: 0;
 }
 
 /* ボタン */
 .btns {
   display: flex;
   justify-content: flex-end;
-  gap: 24px;         /* ボタン間の隙間を広げる */
-  margin-top: 32px;  /* ボタン上に余白を追加して下に下げる */
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
 }
 
 .approve,
 .reject {
-  font-size: 1.2rem;     /* 文字を大きく */
-  padding: 16px 40px;    /* ボタン自体を大きく */
-  border-radius: 6px;    /* 角丸もお好みで */
+  min-width: 140px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 13px 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: -0.01em;
+  box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.08);
 }
 
 .approve {
-  background: #2f6da3;
+  background: #374151;
   color: white;
-  border: 2px solid #020507;
+  border: 1.5px solid #374151;
+}
+
+.approve:hover {
+  background: #1f2937;
+  border-color: #1f2937;
+  box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.15);
+}
+
+.approve:active {
+  background: #111827;
 }
 
 .reject {
-  background: #d90000;
+  background: #dc2626;
   color: white;
-  border: 2px solid #060202;
+  border: 1.5px solid #dc2626;
+}
+
+.reject:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.15);
+}
+
+.reject:active {
+  background: #991b1b;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1200px) {
+  .bottom-row {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .bottom-row .box {
+    min-width: 0;
+  }
+}
+
+@media (max-width: 1024px) {
+  .main {
+    flex-direction: column;
+  }
+
+  .left,
+  .right {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 32px 16px 48px;
+  }
+
+  h2 {
+    font-size: 24px;
+    margin-bottom: 24px;
+  }
+
+  .main {
+    gap: 20px;
+  }
+
+  .title {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .content {
+    padding: 16px;
+    font-size: 13px;
+  }
+
+  .large {
+    min-height: 200px;
+  }
+
+  .bottom-row .content {
+    min-height: 200px;
+  }
+
+  textarea {
+    padding: 14px 16px;
+    font-size: 13px;
+    height: 180px;
+  }
+
+  .reapply-target {
+    padding: 14px 16px;
+  }
+
+  .check-area {
+    padding: 16px;
+    gap: 10px;
+  }
+
+  .check-area label {
+    font-size: 12px;
+  }
+
+  .btns {
+    flex-direction: column-reverse;
+    gap: 12px;
+    padding-top: 20px;
+  }
+
+  .approve,
+  .reject {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 24px 12px 40px;
+  }
+
+  h2 {
+    font-size: 22px;
+  }
+
+  .title {
+    padding: 8px 14px;
+  }
+
+  .content {
+    padding: 14px;
+  }
 }
 </style>
 
