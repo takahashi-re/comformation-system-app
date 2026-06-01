@@ -19,3 +19,15 @@ export interface UserListResponse {
   totalCount: number
   displayCount: number
 }
+
+export interface UpdateUserRequest {
+  userId: string
+  fullName: string
+  role: UserRole
+}
+
+export interface CreateUserRequest {
+  userId: string
+  fullName: string
+  role: UserRole
+}

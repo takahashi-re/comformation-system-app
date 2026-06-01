@@ -7,3 +7,5 @@ frontend/dist
 npm-debug.log*
 .DS_Store
 coverage
+ScoutDX_template/frontend/.vite/
+ScoutDX_template/frontend/node_modules/.vite/

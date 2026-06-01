@@ -2,8 +2,14 @@
   <div class="app-shell">
     <header v-if="showHeader" class="app-header">
       <nav class="app-nav">
+        <RouterLink to="/dashboard" class="nav-link">ダッシュボード</RouterLink>
         <RouterLink to="/scout/list" class="nav-link">scout文一覧</RouterLink>
-        <RouterLink to="/admin/users" class="nav-link">従業員一覧</RouterLink>
+        <RouterLink
+          to="/admin/users"
+          class="nav-link"
+          v-if="userPositionId === 3"
+          >従業員一覧</RouterLink
+        >
         <span class="user-name">ユーザー名: {{ userName }}</span>
         <RouterLink to="/auth/change-password" class="nav-link"
           >パスワード変更</RouterLink
@@ -21,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useLoginStore } from "./store/login.Store";
 
@@ -35,9 +41,16 @@ const showHeader = computed(
 const userName = computed(
   () => loginStore.user?.name ?? loginStore.user?.employee_id ?? "",
 );
+const userPositionId = computed(() => loginStore.user?.position_id ?? 0);
 
-const handleLogout = (): void => {
-  loginStore.logout();
+onMounted(async () => {
+  if (route.path !== "/login") {
+    await loginStore.checkSession();
+  }
+});
+
+const handleLogout = async (): Promise<void> => {
+  await loginStore.logout();
   router.push("/login");
 };
 </script>

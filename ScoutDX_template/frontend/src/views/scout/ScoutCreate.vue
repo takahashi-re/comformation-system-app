@@ -1,186 +1,3 @@
-<script setup lang="ts">
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
-
-// 求人情報
-interface JobInfo {
-  companyName: string
-  jobTitle: string
-  businessContent: string
-  requiredSkills: string
-  location: string
-  salary: number | null
-  appealPoints: string
-}
-
-// 求職者情報
-interface ApplicantInfo {
-  gender: string
-  age: number | null
-  desiredJobTitle: string
-  aiInstructions: string
-}
-
-interface ScoutGenerateRequest {
-  jobInfo: JobInfo
-  applicantInfo: ApplicantInfo
-  textStyle: string
-}
-
-interface ScoutGenerateResponse {
-  body: string
-  scoutId: string
-}
-
-const router = useRouter()
-
-// フォームデータ
-const jobInfo = reactive<JobInfo>({
-  companyName: '',
-  jobTitle: '',
-  businessContent: '',
-  requiredSkills: '',
-  location: '',
-  salary: null,
-  appealPoints: ''
-})
-
-const applicantInfo = reactive<ApplicantInfo>({
-  gender: '',
-  age: null,
-  desiredJobTitle: '',
-  aiInstructions: ''
-})
-
-// ローディング状態
-// const isLoading = ref(false)
-const isGenerating = ref(false)
-const textStyle = ref('丁寧')
-
-// バリデーションエラー
-const errors = reactive<Record<string, string>>({})
-
-// 性別選択肢
-const genderOptions = [
-  { label: '男性', value: 'male' },
-  { label: '女性', value: 'female' },
-  { label: '不問', value: 'any' }
-]
-
-// バリデーション
-const validateForm = (): boolean => {
-  // エラーをクリア
-  Object.keys(errors).forEach(key => delete errors[key])
-
-  // 必須項目チェック
-  if (!jobInfo.companyName) {
-    errors.companyName = '会社名を入力してください'
-  } else if (jobInfo.companyName.length > 255) {
-    errors.companyName = '会社名は255文字以内で入力してください'
-  }
-
-  if (!jobInfo.jobTitle) {
-    errors.jobTitle = '職種を入力してください'
-  } else if (jobInfo.jobTitle.length > 255) {
-    errors.jobTitle = '職種は255文字以内で入力してください'
-  }
-
-  if (!jobInfo.businessContent) {
-    errors.businessContent = '業務内容を入力してください'
-  } else if (jobInfo.businessContent.length > 2000) {
-    errors.businessContent = '業務内容は2000文字以内で入力してください'
-  }
-
-  if (!jobInfo.requiredSkills) {
-    errors.requiredSkills = '必須スキルを入力してください'
-  } else if (jobInfo.requiredSkills.length > 2000) {
-    errors.requiredSkills = '必須スキルは2000文字以内で入力してください'
-  }
-
-  if (!jobInfo.location) {
-    errors.location = '勤務地を入力してください'
-  } else if (jobInfo.location.length > 255) {
-    errors.location = '勤務地は255文字以内で入力してください'
-  }
-
-  if (!jobInfo.salary) {
-    errors.salary = '給与単価を入力してください'
-  } else if (typeof jobInfo.salary !== 'number') {
-    errors.salary = '給与単価は数値で入力してください'
-  }
-
-  if (!jobInfo.appealPoints) {
-    errors.appealPoints = '求人の魅力を入力してください'
-  } else if (jobInfo.appealPoints.length > 2000) {
-    errors.appealPoints = '求人の魅力は2000文字以内で入力してください'
-  }
-
-  // 任意項目の文字数チェック
-  if (applicantInfo.age !== null && (applicantInfo.age < 0 || applicantInfo.age > 100)) {
-    errors.age = '年齢は0〜100の範囲で入力してください'
-  }
-
-  if (applicantInfo.desiredJobTitle && applicantInfo.desiredJobTitle.length > 255) {
-    errors.desiredJobTitle = '希望職種は255文字以内で入力してください'
-  }
-
-  if (applicantInfo.aiInstructions && applicantInfo.aiInstructions.length > 2000) {
-    errors.aiInstructions = 'AI指示は2000文字以内で入力してください'
-  }
-
-  return Object.keys(errors).length === 0
-}
-
-// スカウト文作成（バックエンド生成）
-const handleCreateScout = async () => {
-  // バリデーション
-  if (!validateForm()) {
-    window.alert('入力内容に誤りがあります')
-    return
-  }
-
-  try {
-    isGenerating.value = true
-
-    const requestData: ScoutGenerateRequest = {
-      jobInfo,
-      applicantInfo,
-      textStyle: textStyle.value
-    }
-
-    console.log(1)
-
-    const response = await fetch('/api/ai/generate', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(requestData)
-    })
-
-    console.log(2)
-
-    if (!response.ok) {
-      throw new Error('スカウト文の生成に失敗しました')
-    }
-
-    console.log(3)
-
-    const data: ScoutGenerateResponse = await response.json()
-    sessionStorage.setItem('generatedScoutMessage', data.body)
-    window.alert('スカウト文を生成しました')
-    router.push(`/scout/${data.scoutId}/edit`)
-    
-  } catch (error) {
-    console.error('スカウト文生成エラー:', error)
-    window.alert('スカウト文の生成に失敗しました。もう一度お試しください。')
-  } finally {
-    isGenerating.value = false
-  }
-}
-
-</script>
-
 <template>
   <div class="scout-create">
 
@@ -280,18 +97,40 @@ const handleCreateScout = async () => {
 
           <!-- 給与単価 -->
           <div class="form-group">
-            <label for="salary" class="form-label required">給与単価</label>
-            <input
-              id="salary"
-              v-model.number="jobInfo.salary"
-              type="number"
-              class="form-input"
-              :class="{ 'is-error': errors.salary }"
-              placeholder="給与単価を入力"
-            />
-            <span v-if="errors.salary" class="error-message">
-              {{ errors.salary }}
-            </span>
+            <label class="form-label required">給与単価</label>
+            <div class="salary-range">
+              <div class="salary-range-item">
+                <input
+                  id="minSalary"
+                  v-model.number="jobInfo.minSalary"
+                  type="number"
+                  step="10000"
+                  class="form-input"
+                  :class="{ 'is-error': errors.minSalary }"
+                  min="0"
+                  placeholder="最小給与を入力"
+                />
+                <span v-if="errors.minSalary" class="error-message">
+                  {{ errors.minSalary }}
+                </span>
+              </div>
+              <span class="salary-range-separator">〜</span>
+              <div class="salary-range-item">
+                <input
+                  id="maxSalary"
+                  v-model.number="jobInfo.maxSalary"
+                  type="number"
+                  step="10000"
+                  class="form-input"
+                  :class="{ 'is-error': errors.maxSalary }"
+                  min="0"
+                  placeholder="最大給与を入力"
+                />
+                <span v-if="errors.maxSalary" class="error-message">
+                  {{ errors.maxSalary }}
+                </span>
+              </div>
+            </div>
           </div>
 
           <!-- 求人の魅力 -->
@@ -318,11 +157,12 @@ const handleCreateScout = async () => {
 
           <!-- 性別 -->
           <div class="form-group">
-            <label for="gender" class="form-label">性別</label>
+            <label for="gender" class="form-label required">性別</label>
             <select
               id="gender"
               v-model="applicantInfo.gender"
               class="form-select"
+              :class="{ 'is-error': errors.gender }"
             >
               <option value="">選択してください</option>
               <option
@@ -333,11 +173,14 @@ const handleCreateScout = async () => {
                 {{ option.label }}
               </option>
             </select>
+            <span v-if="errors.gender" class="error-message">
+              {{ errors.gender }}
+            </span>
           </div>
 
           <!-- 年齢 -->
           <div class="form-group">
-            <label for="age" class="form-label">年齢</label>
+            <label for="age" class="form-label required">年齢</label>
             <input
               id="age"
               v-model.number="applicantInfo.age"
@@ -355,7 +198,7 @@ const handleCreateScout = async () => {
 
           <!-- 希望職種 -->
           <div class="form-group">
-            <label for="desiredJobTitle" class="form-label">希望職種</label>
+            <label for="desiredJobTitle" class="form-label required">希望職種</label>
             <input
               id="desiredJobTitle"
               v-model="applicantInfo.desiredJobTitle"
@@ -391,12 +234,18 @@ const handleCreateScout = async () => {
         <!-- 文体指定 -->
         <section class="form-section text-style-section">
           <h2 class="section-title-alt">文体指定</h2>
-          <input
-            type="text"
-            class="form-input-alt"
+          <select
+            class="form-select"
             v-model="textStyle"
-            placeholder="文体を指定"
-          />
+          >
+            <option
+              v-for="option in textStyleOptions"
+              :key="option.value"
+              :value="option.value"
+            >
+              {{ option.label }}
+            </option>
+          </select>
         </section>
 
         <!-- アクションボタン -->
@@ -414,6 +263,202 @@ const handleCreateScout = async () => {
     </main>
   </div>
 </template>
+
+<script setup lang="ts">
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { apiClient } from '../../api/client'
+
+// 求人情報
+interface JobInfo {
+  companyName: string
+  jobTitle: string
+  businessContent: string
+  requiredSkills: string
+  location: string
+  minSalary: number | null
+  maxSalary: number | null
+  appealPoints: string
+}
+
+// 求職者情報
+interface ApplicantInfo {
+  gender: string
+  age: number | null
+  desiredJobTitle: string
+  aiInstructions: string
+}
+
+interface ScoutGenerateRequest {
+  jobInfo: JobInfo
+  applicantInfo: ApplicantInfo
+  textStyle: 'casual' | 'formal'
+}
+
+interface ScoutGenerateResponse {
+  body: string
+  scoutId: string
+}
+
+const router = useRouter()
+
+// フォームデータ
+const jobInfo = reactive<JobInfo>({
+  companyName: '',
+  jobTitle: '',
+  businessContent: '',
+  requiredSkills: '',
+  location: '',
+  minSalary: null,
+  maxSalary: null,
+  appealPoints: ''
+})
+
+const applicantInfo = reactive<ApplicantInfo>({
+  gender: '',
+  age: null,
+  desiredJobTitle: '',
+  aiInstructions: ''
+})
+
+// ローディング状態
+// const isLoading = ref(false)
+const isGenerating = ref(false)
+const textStyle = ref<'casual' | 'formal'>('formal')
+
+const textStyleOptions = [
+  { label: 'カジュアル', value: 'casual' },
+  { label: 'フォーマル', value: 'formal' }
+]
+
+// バリデーションエラー
+const errors = reactive<Record<string, string>>({})
+
+// 性別選択肢
+const genderOptions = [
+  { label: '男性', value: 'male' },
+  { label: '女性', value: 'female' },
+  { label: '不問', value: 'any' }
+]
+
+// バリデーション
+const validateForm = (): boolean => {
+  // エラーをクリア
+  Object.keys(errors).forEach(key => delete errors[key])
+
+  // 必須項目チェック
+  if (!jobInfo.companyName) {
+    errors.companyName = '会社名を入力してください'
+  } else if (jobInfo.companyName.length > 255) {
+    errors.companyName = '会社名は255文字以内で入力してください'
+  }
+
+  if (!jobInfo.jobTitle) {
+    errors.jobTitle = '職種を入力してください'
+  } else if (jobInfo.jobTitle.length > 255) {
+    errors.jobTitle = '職種は255文字以内で入力してください'
+  }
+
+  if (!jobInfo.businessContent) {
+    errors.businessContent = '業務内容を入力してください'
+  } else if (jobInfo.businessContent.length > 2000) {
+    errors.businessContent = '業務内容は2000文字以内で入力してください'
+  }
+
+  if (!jobInfo.requiredSkills) {
+    errors.requiredSkills = '必須スキルを入力してください'
+  } else if (jobInfo.requiredSkills.length > 2000) {
+    errors.requiredSkills = '必須スキルは2000文字以内で入力してください'
+  }
+
+  if (!jobInfo.location) {
+    errors.location = '勤務地を入力してください'
+  } else if (jobInfo.location.length > 255) {
+    errors.location = '勤務地は255文字以内で入力してください'
+  }
+
+  if (jobInfo.minSalary === null || Number.isNaN(jobInfo.minSalary)) {
+    errors.minSalary = '最小給与を入力してください'
+  } else if (typeof jobInfo.minSalary !== 'number' || jobInfo.minSalary < 0) {
+    errors.minSalary = '最小給与は0以上の数値で入力してください'
+  }
+
+  if (jobInfo.maxSalary === null || Number.isNaN(jobInfo.maxSalary)) {
+    errors.maxSalary = '最大給与を入力してください'
+  } else if (typeof jobInfo.maxSalary !== 'number' || jobInfo.maxSalary < 0) {
+    errors.maxSalary = '最大給与は0以上の数値で入力してください'
+  }
+
+  if (
+    jobInfo.minSalary !== null &&
+    jobInfo.maxSalary !== null &&
+    !Number.isNaN(jobInfo.minSalary) &&
+    !Number.isNaN(jobInfo.maxSalary) &&
+    jobInfo.minSalary > jobInfo.maxSalary
+  ) {
+    errors.maxSalary = '最大給与は最小給与以上で入力してください'
+  }
+
+  if (!jobInfo.appealPoints) {
+    errors.appealPoints = '求人の魅力を入力してください'
+  } else if (jobInfo.appealPoints.length > 2000) {
+    errors.appealPoints = '求人の魅力は2000文字以内で入力してください'
+  }
+
+  if (!applicantInfo.gender) {
+    errors.gender = '性別を選択してください'
+  }
+
+  if (applicantInfo.age === null || Number.isNaN(applicantInfo.age)) {
+    errors.age = '年齢を入力してください'
+  } else if (applicantInfo.age < 0 || applicantInfo.age > 100) {
+    errors.age = '年齢は0〜100の範囲で入力してください'
+  }
+
+  if (!applicantInfo.desiredJobTitle) {
+    errors.desiredJobTitle = '希望職種を入力してください'
+  } else if (applicantInfo.desiredJobTitle.length > 255) {
+    errors.desiredJobTitle = '希望職種は255文字以内で入力してください'
+  }
+
+  if (applicantInfo.aiInstructions && applicantInfo.aiInstructions.length > 2000) {
+    errors.aiInstructions = 'AI指示は2000文字以内で入力してください'
+  }
+
+  return Object.keys(errors).length === 0
+}
+
+// スカウト文作成（バックエンド生成）
+const handleCreateScout = async () => {
+  // バリデーション
+  if (!validateForm()) {
+    window.alert('入力内容に誤りがあります')
+    return
+  }
+
+  try {
+    isGenerating.value = true
+
+    const requestData: ScoutGenerateRequest = {
+      jobInfo,
+      applicantInfo,
+      textStyle: textStyle.value
+    }
+
+    const { data } = await apiClient.post<ScoutGenerateResponse>('/api/ai/generate', requestData)
+    sessionStorage.setItem('generatedScoutMessage', data.body)
+    window.alert('スカウト文を生成しました')
+    router.push(`/scout/${data.scoutId}/edit`)
+    
+  } catch (error) {
+    console.error('スカウト文生成エラー:', error)
+    window.alert('スカウト文の生成に失敗しました。もう一度お試しください。')
+  } finally {
+    isGenerating.value = false
+  }
+}
+
+</script>
 
 <style scoped>
 .scout-create {
@@ -558,13 +603,30 @@ const handleCreateScout = async () => {
 }
 
 .form-input.is-error,
-.form-textarea.is-error {
+.form-textarea.is-error,
+.form-select.is-error {
   border-color: #f56c6c;
 }
 
 .form-textarea {
   resize: vertical;
   min-height: 100px;
+}
+
+.salary-range {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.salary-range-item {
+  flex: 1;
+}
+
+.salary-range-separator {
+  line-height: 44px;
+  color: #666;
+  font-weight: 600;
 }
 
 .error-message {
@@ -624,6 +686,16 @@ const handleCreateScout = async () => {
   .header-nav {
     flex-direction: column;
     gap: 12px;
+  }
+
+  .salary-range {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .salary-range-separator {
+    line-height: 1;
+    align-self: center;
   }
 }
 </style>

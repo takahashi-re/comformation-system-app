@@ -43,24 +43,39 @@ export interface CreateScoutMessageInput {
 export class ScoutMessageRepository {
   constructor(private readonly dataSource: DataSource) {}
 
+  private async syncPrimaryKeySequence(): Promise<void> {
+    await this.dataSource.query(`
+      SELECT setval(
+        pg_get_serial_sequence('scout_messages', 'scout_message_id'),
+        COALESCE((SELECT MAX(scout_message_id) FROM scout_messages), 0) + 1,
+        false
+      )
+    `);
+  }
+
   // Compatibility methods used by ScoutService.
   async findAll(): Promise<any[]> {
     return this.dataSource.query(
       `
         SELECT
-          scout_message_id::text AS id,
-          created_at,
-          COALESCE(created_by_employee_id, '') AS creator,
+          sm.scout_message_id::text AS id,
+          sm.created_at,
+          COALESCE(sm.created_by_employee_id, '') AS creator,
           '' AS title,
-          COALESCE(message_content, '') AS body,
-          COALESCE(status, 'DRAFT') AS status
-        FROM SCOUT_MESSAGES
-        ORDER BY created_at DESC NULLS LAST, scout_message_id DESC
+          COALESCE(sm.message_content, '') AS body,
+          COALESCE(sm.status, 'DRAFT') AS status,
+          COALESCE(jp.company_name, '') AS company_name,
+          COALESCE(jp.job_title, '') AS job_title
+        FROM SCOUT_MESSAGES sm
+        LEFT JOIN JOB_POSTINGS jp ON jp.job_posting_id = sm.job_posting_id
+        ORDER BY sm.created_at DESC NULLS LAST, sm.scout_message_id DESC
       `,
     );
   }
 
   async save(scout: any): Promise<any> {
+    await this.syncPrimaryKeySequence();
+
     const rows = await this.dataSource.query(
       `
         INSERT INTO SCOUT_MESSAGES (
@@ -80,7 +95,7 @@ export class ScoutMessageRepository {
           COALESCE(message_content, '') AS body,
           COALESCE(status, 'DRAFT') AS status
       `,
-      [scout?.body ?? '', scout?.creator ?? null, scout?.status ?? 'DRAFT'],
+      [scout?.body ?? "", scout?.creator ?? null, scout?.status ?? "DRAFT"],
     );
 
     return rows[0];
@@ -227,10 +242,12 @@ export class ScoutMessageRepository {
       [Number(id)],
     );
 
-    return rows[0]?.return_comment ?? '';
+    return rows[0]?.return_comment ?? "";
   }
 
   async saveGeneratedMessage(messageContent: string): Promise<number> {
+    await this.syncPrimaryKeySequence();
+
     const rows = await this.dataSource.query(
       `
         INSERT INTO SCOUT_MESSAGES (
@@ -312,6 +329,8 @@ export class ScoutMessageRepository {
       throw new Error("job_posting_id と job_seeker_id は必須です");
     }
 
+    await this.syncPrimaryKeySequence();
+
     const rows = await this.dataSource.query(
       `
         INSERT INTO SCOUT_MESSAGES (
@@ -355,6 +374,8 @@ export class ScoutMessageRepository {
     if (!input.job_posting_id || !input.job_seeker_id) {
       throw new Error("job_posting_id と job_seeker_id は必須です");
     }
+
+    await this.syncPrimaryKeySequence();
 
     const rows = await this.dataSource.query(
       `

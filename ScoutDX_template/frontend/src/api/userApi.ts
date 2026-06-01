@@ -1,16 +1,45 @@
-import axios from 'axios'
 import { apiClient } from './client'
-import type { User, UserFilterParams, UserListResponse, UserRole } from '../type/user'
+import type { CreateUserRequest, UpdateUserRequest, User, UserFilterParams, UserListResponse, UserRole } from '../type/user'
 
 type RawUser = Record<string, unknown>
 
 const roleFallback: UserRole = 'sales'
+
+function getStatusCode(error: unknown): number | undefined {
+  if (typeof error !== 'object' || error === null) {
+    return undefined
+  }
+
+  const response = (error as { response?: { status?: unknown } }).response
+  return typeof response?.status === 'number' ? response.status : undefined
+}
 
 function toRole(value: unknown): UserRole {
   if (value === 'admin' || value === 'approver' || value === 'sales') {
     return value
   }
   return roleFallback
+}
+
+function toDateString(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    return value
+  }
+
+  if (value instanceof Date) {
+    return value.toISOString()
+  }
+
+  return undefined
+}
+
+function toTimestamp(value?: string): number {
+  if (!value) {
+    return Number.MAX_SAFE_INTEGER
+  }
+
+  const parsed = Date.parse(value)
+  return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed
 }
 
 function toUser(raw: RawUser): User {
@@ -26,7 +55,7 @@ function toUser(raw: RawUser): User {
     username,
     fullName,
     role: toRole(raw.role),
-    createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : undefined,
+    createdAt: toDateString(raw.createdAt),
   }
 }
 
@@ -45,10 +74,10 @@ function sortUsers(users: User[], sort?: UserFilterParams['sort']): User[] {
   }
 
   if (sort === 'created_asc') {
-    return list.sort((a, b) => (a.createdAt ?? '').localeCompare(b.createdAt ?? ''))
+    return list.sort((a, b) => toTimestamp(a.createdAt) - toTimestamp(b.createdAt))
   }
 
-  return list.sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
+  return list.sort((a, b) => toTimestamp(b.createdAt) - toTimestamp(a.createdAt))
 }
 
 function normalizeResponse(raw: unknown, params?: UserFilterParams): UserListResponse {
@@ -79,7 +108,7 @@ export async function fetchUsers(params?: UserFilterParams): Promise<UserListRes
     const { data } = await apiClient.get('/api/users', { params })
     return normalizeResponse(data, params)
   } catch (error: unknown) {
-    if (axios.isAxiosError(error) && error.response?.status === 404) {
+    if (getStatusCode(error) === 404) {
       return fallbackCurrentUser(params)
     }
     throw error
@@ -91,7 +120,7 @@ export async function fetchUserById(userId: string): Promise<User> {
     const { data } = await apiClient.get(`/api/users/${userId}`)
     return toUser(data as RawUser)
   } catch (error: unknown) {
-    if (axios.isAxiosError(error) && error.response?.status === 404) {
+    if (getStatusCode(error) === 404) {
       const { data } = await apiClient.get('/api/login/me')
       return toUser(data as RawUser)
     }
@@ -101,4 +130,18 @@ export async function fetchUserById(userId: string): Promise<User> {
 
 export async function deleteUserById(userId: string): Promise<void> {
   await apiClient.delete(`/api/users/${userId}`)
+}
+
+export async function updateUserById(userId: string, payload: UpdateUserRequest): Promise<User> {
+  const { data } = await apiClient.put(`/api/users/${userId}`, payload)
+  return toUser(data as RawUser)
+}
+
+export async function createUser(payload: CreateUserRequest): Promise<User> {
+  const { data } = await apiClient.post('/api/users', payload)
+  return toUser(data as RawUser)
+}
+
+export async function resetUserPassword(userId: string): Promise<void> {
+  await apiClient.post(`/api/users/${userId}/reset-password`)
 }

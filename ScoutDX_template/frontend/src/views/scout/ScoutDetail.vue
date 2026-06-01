@@ -12,7 +12,7 @@
   </div>
 
   <div class="row">
-    <div class="label">宛先候補</div>
+    <div class="label">求職者情報</div>
     <div class="value">{{ detail.candidate }}</div>
   </div>
 
@@ -57,8 +57,18 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { fetchScoutDetail } from '../../api/scoutApi'
 
 const route = useRoute()
+
+const toGenderLabel = (value) => {
+  const normalized = String(value ?? '').trim().toLowerCase()
+  if (normalized === 'male' || normalized === 'm' || normalized === '男性') return '男性'
+  if (normalized === 'female' || normalized === 'f' || normalized === '女性') return '女性'
+  if (normalized === 'other' || normalized === 'others' || normalized === 'non-binary' || normalized === 'その他') return 'その他'
+  return '-'
+}
+
 const detail = ref({
   creator: '',
   candidate: '',
@@ -71,21 +81,24 @@ const detail = ref({
 })
 
 onMounted(async () => {
-  const id = route.params.id
+  const id = String(route.params.id ?? '')
+  if (!id) return
 
   try {
-    const res = await fetch(`/api/scout/${id}`)
-    const data = await res.json()
+    const data = await fetchScoutDetail(id)
+    const scout = data?.scout ?? {}
+
+    const candidateInfo = [
+      `年齢: ${scout.candidate_age ?? '-'}`,
+      `性別: ${toGenderLabel(scout.candidate_gender)}`,
+      `希望職種: ${scout.candidate_desired_position || '-'}`,
+    ].join(' / ')
 
     detail.value = {
-      creator: data.creator,
-      candidate: data.candidate,
-      createdAt: data.createdAt,
-      status: data.status,
-      jobInfo: data.jobInfo,
-      body: data.body,
-      reviewer: data.reviewer,
-      comment: data.comment
+      ...detail.value,
+      creator: scout.creator_name || '-',
+      candidate: candidateInfo,
+      reviewer: scout.returned_by_name || scout.updated_by_name || scout.reviewer_name || '-'
     }
   } catch (e) {
     console.error('データ取得エラー', e)

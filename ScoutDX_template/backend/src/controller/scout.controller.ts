@@ -1,10 +1,27 @@
-import { Body, Controller, Get, Post, Put, Param } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { Request } from 'express';
 import { ScoutService } from '../service/scout.service';
 import { ScoutEntity } from '../type/scout';
+import { LoginService } from '../service/login.service';
 
 @Controller('api/scouts')
 export class ScoutController {
-  constructor(private readonly scoutService: ScoutService) {}
+  private readonly SESSION_COOKIE_NAME = 'session_token';
+
+  constructor(
+    private readonly scoutService: ScoutService,
+    private readonly loginService: LoginService,
+  ) {}
 
   @Get()
   findAll() {
