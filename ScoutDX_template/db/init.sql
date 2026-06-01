@@ -69,9 +69,9 @@ CREATE TABLE IF NOT EXISTS POSITIONS (
 
 -- 9. EMPLOYEES
 CREATE TABLE IF NOT EXISTS EMPLOYEES (
-  employee_id SERIAL PRIMARY KEY,
+  employee_id VARCHAR(20) PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
+  password VARCHAR(255) NOT NULL,
   position_id INTEGER,
   created_at TIMESTAMP,
   updated_at TIMESTAMP,
@@ -100,15 +100,19 @@ CREATE TABLE IF NOT EXISTS SCOUT_MESSAGES (
   sent_at TIMESTAMP,
   job_posting_id INTEGER,
   job_seeker_id INTEGER,
-  created_by_employee_id INTEGER,
-  updated_by_employee_id INTEGER,
+  created_by_employee_id VARCHAR(20),
+  updated_by_employee_id VARCHAR(20),
+  approved_primary_by_employee_id VARCHAR(20),
+  approved_secondary_by_employee_id VARCHAR(20),
   status VARCHAR(50),
   created_at TIMESTAMP,
   updated_at TIMESTAMP,
   FOREIGN KEY (job_posting_id) REFERENCES JOB_POSTINGS(job_posting_id) ON DELETE SET NULL,
   FOREIGN KEY (job_seeker_id) REFERENCES JOB_SEEKERS(job_seeker_id) ON DELETE SET NULL,
   FOREIGN KEY (created_by_employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE SET NULL,
-  FOREIGN KEY (updated_by_employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE SET NULL
+  FOREIGN KEY (updated_by_employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE SET NULL,
+  FOREIGN KEY (approved_primary_by_employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE SET NULL,
+  FOREIGN KEY (approved_secondary_by_employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE SET NULL
 );
 
 -- 13. SCOUT_MESSAGE_HISTORIES
@@ -117,11 +121,15 @@ CREATE TABLE IF NOT EXISTS SCOUT_MESSAGE_HISTORIES (
   scout_message_id INTEGER,
   message_content TEXT,
   return_comment TEXT,
-  returned_by_employee_id INTEGER,
+  returned_by_employee_id VARCHAR(20),
+  approved_primary_by_employee_id VARCHAR(20),
+  approved_secondary_by_employee_id VARCHAR(20),
   returned_at TIMESTAMP,
   sent_at TIMESTAMP,
   FOREIGN KEY (scout_message_id) REFERENCES SCOUT_MESSAGES(scout_message_id) ON DELETE CASCADE,
-  FOREIGN KEY (returned_by_employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE SET NULL
+  FOREIGN KEY (returned_by_employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE SET NULL,
+  FOREIGN KEY (approved_primary_by_employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE SET NULL,
+  FOREIGN KEY (approved_secondary_by_employee_id) REFERENCES EMPLOYEES(employee_id) ON DELETE SET NULL
 );
 
 -- 14. RETURN_COMMENT_HISTORY_GENRES (中間テーブル)
