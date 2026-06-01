@@ -33,4 +33,10 @@ export class UserController {
   ): Promise<UserResponse> {
     return this.userService.updateUser(id, body);
   }
+
+  @Post(":id/reset-password")
+  async resetPassword(@Param("id") id: string): Promise<{ message: string }> {
+    await this.userService.resetPassword(id);
+    return { message: "パスワードをリセットしました" };
+  }
 }

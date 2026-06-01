@@ -154,6 +154,13 @@ export class UserService {
     return this.toUserResponse(updated);
   }
 
+  async resetPassword(employeeId: string): Promise<void> {
+    const updated = await this.employeeRepository.resetPasswordToUserName(employeeId);
+    if (!updated) {
+      throw new NotFoundException("対象のユーザーが存在しません");
+    }
+  }
+
   private toUserResponse(row: EmployeeRow): UserResponse {
     return {
       userId: row.employee_id,
