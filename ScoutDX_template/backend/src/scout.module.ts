@@ -31,7 +31,11 @@ import { ScoutEntity } from "./type/scout";
   providers: [
     ScoutService,
     ScoutMessageRepository,
+    JobPostingRepository,
+    JobSeekerRepository,
     AiGenerateService,
+    AIConfigService,
+    AIConfigRepository,
     LoginService,
     UserService,
     LoginRepository,
