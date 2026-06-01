@@ -133,7 +133,7 @@ onMounted(async () => {
       status: toStatusLabel(scout.status),
       jobInfo,
       body: toDisplayValue(scout.body),
-      reviewer: toDisplayValue(scout.returned_by_name || scout.updated_by_name || scout.reviewer_name || scout.updated_by_employee_id),
+      reviewer: toDisplayValue(scout.returned_by_name || scout.updated_by_name || scout.reviewer_name),
       comment: toDisplayValue(scout.latest_reject_comment || data?.latestRejectComment)
     }
   } catch (e) {
