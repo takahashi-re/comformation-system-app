@@ -12,7 +12,7 @@
   </div>
 
   <div class="row">
-    <div class="label">宛先候補</div>
+    <div class="label">求職者情報</div>
     <div class="value">{{ detail.candidate }}</div>
   </div>
 

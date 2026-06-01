@@ -38,17 +38,9 @@
                 編集
               </button>
 
-              <!-- 承認者 -->
+              <!-- 承認・差戻し（対象ステータスのみ） -->
               <button
-                v-if="role === 'approver' && scout.status === 'PENDING_APPROVER'"
-                @click="goReview(scout.id)"
-              >
-                承認・差戻し
-              </button>
-
-              <!-- 管理者 -->
-              <button
-                v-if="role === 'admin' && scout.status === 'PENDING_ADMIN'"
+                v-if="canReview(scout.status)"
                 @click="goReview(scout.id)"
               >
                 承認・差戻し
@@ -262,6 +254,11 @@ export default {
 
     isEditable(status) {
       return ["下書き", "承認者差戻し", "管理者差戻し"].includes(status);
+    },
+
+    canReview(status) {
+      const canAccessReview = this.role === "approver" || this.role === "admin";
+      return canAccessReview && ["PENDING_APPROVER", "REJECTED_BY_ADMIN"].includes(status);
     },
 
     getRowClass(status) {
