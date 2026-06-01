@@ -73,6 +73,37 @@
             </label>
           </div>
 
+          <div class="filter-group">
+            <div class="filter-group-title">求職者 性別</div>
+            <label v-for="gender in genderOptions" :key="gender" class="filter-check">
+              <input type="checkbox" :value="gender" v-model="filterGenders" />
+              {{ gender }}
+            </label>
+          </div>
+
+          <div class="filter-group">
+            <div class="filter-group-title">求職者 年代</div>
+            <label v-for="ageGroup in ageGroupOptions" :key="ageGroup" class="filter-check">
+              <input type="checkbox" :value="ageGroup" v-model="filterAgeGroups" />
+              {{ ageGroup }}
+            </label>
+          </div>
+
+          <div class="filter-group">
+            <div class="filter-group-title">最終更新日</div>
+            <div class="filter-check" style="align-items: center; gap: 6px;">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                v-model.number="updatedDays"
+                placeholder="n 日"
+                style="width: 96px;"
+              />
+              以上
+            </div>
+          </div>
+
           <button @click="clearFilters">フィルタ全解除</button>
         </div>
       </div>
@@ -153,6 +184,9 @@ export default {
       filterStatuses: [],
       filterCompanies: [],
       filterJobs: [],
+      filterGenders: [],
+      filterAgeGroups: [],
+      updatedDays: '',
       selectedColumns: ["company", "job", "status"],
       scouts: [],
     };
@@ -194,9 +228,30 @@ export default {
           this.filterCompanies.length === 0 ||
           this.filterCompanies.includes(s.company);
         const jobMatched =
-          this.filterJobs.length === 0 || this.filterJobs.includes(s.job);
+          this.filterJobs.length === 0 ||
+          this.filterJobs.includes(s.job);
+        const genderMatched =
+          this.filterGenders.length === 0 ||
+          this.filterGenders.includes(this.toGenderLabel(s.job_seeker_gender));
+        const ageMatched =
+          this.filterAgeGroups.length === 0 ||
+          this.filterAgeGroups.includes(this.toAgeGroup(s.job_seeker_age));
+        const updatedMatched = (() => {
+          const days = this.updatedDaysNumber;
+          if (days === null) return true;
+          if (!s.updatedAt) return false;
+          return this.getDaysSinceUpdated(s.updatedAt) >= days;
+        })();
 
-        return mineMatched && statusMatched && companyMatched && jobMatched;
+        return (
+          mineMatched &&
+          statusMatched &&
+          companyMatched &&
+          jobMatched &&
+          genderMatched &&
+          ageMatched &&
+          updatedMatched
+        );
       });
     },
 
@@ -207,6 +262,26 @@ export default {
     jobs() {
       const set = new Set(this.scouts.map((s) => s.job).filter(Boolean));
       return Array.from(set);
+    },
+    genderOptions() {
+      const set = new Set(
+        this.scouts
+          .map((s) => this.toGenderLabel(s.job_seeker_gender))
+          .filter((gender) => gender !== '不明'),
+      );
+      return Array.from(set);
+    },
+    ageGroupOptions() {
+      const set = new Set(
+        this.scouts
+          .map((s) => this.toAgeGroup(s.job_seeker_age))
+          .filter((ageGroup) => ageGroup !== '不明'),
+      );
+      return Array.from(set);
+    },
+    updatedDaysNumber() {
+      const value = Number(this.updatedDays);
+      return Number.isFinite(value) && value >= 0 ? value : null;
     },
   },
 
@@ -220,6 +295,9 @@ export default {
           job: row.job_title || "-",
           status: row.status,
           statusLabel: STATUS_MAP[row.status] || "-",
+          job_seeker_age: row.job_seeker_age ?? null,
+          job_seeker_gender: row.job_seeker_gender ?? '',
+          updatedAt: row.updatedAt ?? row.updated_at ?? '',
         }));
       } catch (e) {
         console.error(e);
@@ -264,6 +342,13 @@ export default {
       if (!Number.isFinite(n) || n <= 0) return "不明";
       const d = Math.floor(n / 10) * 10;
       return `${d}代`;
+    },
+
+    getDaysSinceUpdated(updatedAt) {
+      const date = new Date(updatedAt);
+      if (!date || Number.isNaN(date.getTime())) return Infinity;
+      const diffMs = Date.now() - date.getTime();
+      return Math.floor(diffMs / (1000 * 60 * 60 * 24));
     },
 
     isEditable(status) {
@@ -318,6 +403,9 @@ export default {
       this.filterStatuses = [];
       this.filterCompanies = [];
       this.filterJobs = [];
+      this.filterGenders = [];
+      this.filterAgeGroups = [];
+      this.updatedDays = '';
     },
 
     applyFiltersFromRoute() {
@@ -340,6 +428,9 @@ export default {
       this.filterStatuses = toList(this.$route.query.statuses);
       this.filterCompanies = toList(this.$route.query.companies);
       this.filterJobs = toList(this.$route.query.jobs);
+      this.filterGenders = toList(this.$route.query.genders);
+      this.filterAgeGroups = toList(this.$route.query.ageGroups);
+      this.updatedDays = String(this.$route.query.updatedDays || '');
     },
   },
 };
