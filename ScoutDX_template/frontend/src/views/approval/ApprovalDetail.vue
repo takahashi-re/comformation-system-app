@@ -207,7 +207,6 @@ const approve = async () => {
       reasonKeys
     })
 
-    alert('承認しました')
     router.push('/scout/list')
   } catch (e) {
     console.error('承認エラー', e)
@@ -259,8 +258,6 @@ const reject = async () => {
     alert('差戻しに失敗しました')
     return
   }
-
-  alert('差戻しました')
 
   // 一覧へ戻る（図の最後）
   router.push('/scout/list')
