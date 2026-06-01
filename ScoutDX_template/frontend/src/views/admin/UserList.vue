@@ -166,7 +166,7 @@ onMounted(() => {
 }
 
 .title-bar h1 {
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 700;
   line-height: 1.3;
   letter-spacing: -0.02em;
@@ -384,7 +384,7 @@ onMounted(() => {
   }
 
   .title-bar h1 {
-    font-size: 24px;
+    font-size: 18px;
   }
 
   .title-bar p {
@@ -444,7 +444,7 @@ onMounted(() => {
   }
 
   .title-bar h1 {
-    font-size: 22px;
+    font-size: 16px;
   }
 
   .user-table {

@@ -46,7 +46,7 @@ const handleLogin = async () => {
 }
 
 h2 {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: #1f2937;
   margin: 0 0 32px;
@@ -144,7 +144,7 @@ button:active {
   }
 
   h2 {
-    font-size: 22px;
+    font-size: 18px;
     margin-bottom: 28px;
   }
 
@@ -170,7 +170,7 @@ button:active {
   }
 
   h2 {
-    font-size: 20px;
+    font-size: 16px;
     margin-bottom: 24px;
   }
 

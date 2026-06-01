@@ -500,7 +500,7 @@ const handleCreateScout = async () => {
 }
 
 .page-title {
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 700;
   line-height: 1.3;
   letter-spacing: -0.02em;
@@ -767,7 +767,7 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 
   .page-title {
-    font-size: 24px;
+    font-size: 18px;
     margin-bottom: 24px;
   }
 
@@ -834,7 +834,7 @@ input[type="number"]::-webkit-outer-spin-button {
   }
 
   .page-title {
-    font-size: 22px;
+    font-size: 16px;
   }
 }
 </style>

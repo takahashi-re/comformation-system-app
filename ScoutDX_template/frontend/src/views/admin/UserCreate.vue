@@ -114,7 +114,7 @@ const goBack = (): void => {
 }
 
 h1 {
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 700;
   line-height: 1.3;
   letter-spacing: -0.02em;
@@ -260,7 +260,7 @@ h1 {
   }
 
   h1 {
-    font-size: 24px;
+    font-size: 18px;
     margin-bottom: 24px;
   }
 
@@ -293,7 +293,7 @@ h1 {
   }
 
   h1 {
-    font-size: 22px;
+    font-size: 16px;
   }
 
   .form {

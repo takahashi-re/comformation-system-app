@@ -387,21 +387,19 @@ watch(effectiveScope, async () => {
 }
 
 .title-bar {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 24px 28px;
+  background: transparent;
+  padding: 0 0 20px;
+  border-bottom: 2px solid #e5e7eb;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 20px;
   flex-wrap: wrap;
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
 }
 
 .title-bar h1 {
   margin: 0;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   color: #1f2937;
   letter-spacing: -0.02em;
@@ -667,13 +665,13 @@ watch(effectiveScope, async () => {
   }
 
   .title-bar {
-    padding: 20px;
+    padding: 0 0 16px;
     flex-direction: column;
     align-items: stretch;
   }
 
   .title-bar h1 {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .header-actions {
@@ -735,11 +733,11 @@ watch(effectiveScope, async () => {
   }
 
   .title-bar {
-    padding: 16px;
+    padding: 0 0 12px;
   }
 
   .title-bar h1 {
-    font-size: 18px;
+    font-size: 16px;
   }
 
   .status-grid {
