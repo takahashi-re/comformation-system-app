@@ -99,10 +99,10 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { fetchApprovalDetail, approveScout, rejectScout } from '../../api/scoutApi'
-import { getUser } from '../../api/loginApi'
+import { getMeApi } from '../../api/loginApi'
 
 const route = useRoute()
 const router = useRouter()
@@ -128,6 +128,7 @@ const jobInfo = ref({
 const history = ref([])
 const comment = ref('')
 const reapplyTarget = ref('')
+const currentUser = ref(null)
 
 const reasons = ref({
   integrity: false,
@@ -138,15 +139,32 @@ const reasons = ref({
   typo: false
 })
 
-const readCurrentUser = () => getUser() || {}
-const currentUser = readCurrentUser()
-const currentUserPositionId = Number(currentUser?.position_id ?? 0)
-const isAdminReviewer = currentUserPositionId === 3
+const readCurrentUser = () => currentUser.value || {}
+const currentUserPositionId = computed(() => Number(readCurrentUser()?.position_id ?? 0))
+const isAdminReviewer = computed(() => currentUserPositionId.value === 3)
+
+const ensureCurrentUser = async () => {
+  if (currentUser.value) {
+    return currentUser.value
+  }
+
+  try {
+    currentUser.value = await getMeApi()
+  } catch (e) {
+    console.error('ユーザー取得エラー', e)
+    currentUser.value = null
+  }
+
+  return currentUser.value
+}
 
 /* 初期表示（DB取得） */
 onMounted(async () => {
   try {
-    const data = await fetchApprovalDetail(String(id))
+    const [data] = await Promise.all([
+      fetchApprovalDetail(String(id)),
+      ensureCurrentUser(),
+    ])
 
     scout.value.body = data.scoutBody
     jobInfo.value = data.jobInfo
@@ -187,8 +205,9 @@ const formatSalary = (min, max) => {
 
 /* 承認 */ //承認者が営業承認者か、管理者かで、ステータス変更が変わる。
 const approve = async () => {
+  const user = await ensureCurrentUser()
   const approverEmployeeId =
-    readCurrentUser()?.employee_id || ''
+    user?.employee_id || ''
 
   if (!approverEmployeeId) {
     alert('承認者IDが取得できません')
@@ -229,15 +248,16 @@ const reject = async () => {
     return
   }
 
+  const user = await ensureCurrentUser()
   const returnedByEmployeeId =
-    readCurrentUser()?.employee_id || ''
+    user?.employee_id || ''
 
   if (!returnedByEmployeeId) {
     alert('差戻し担当者IDが取得できません')
     return
   }
 
-  if (isAdminReviewer && reapplyTarget.value !== 'APPROVER' && reapplyTarget.value !== 'ADMIN') {
+  if (isAdminReviewer.value && reapplyTarget.value !== 'APPROVER' && reapplyTarget.value !== 'ADMIN') {
     alert('再申請先を選択してください')
     return
   }
@@ -252,7 +272,7 @@ const reject = async () => {
       returnedByEmployeeId,
       returnComment,
       reasonKeys,
-      reapplyTarget: isAdminReviewer ? reapplyTarget.value : undefined
+      reapplyTarget: isAdminReviewer.value ? reapplyTarget.value : undefined
     })
   } catch (e) {
     console.error('差戻しエラー', e)
