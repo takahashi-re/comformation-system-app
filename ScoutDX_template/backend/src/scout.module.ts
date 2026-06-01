@@ -31,15 +31,15 @@ import { ScoutEntity } from "./type/scout";
   providers: [
     ScoutService,
     ScoutMessageRepository,
+    JobPostingRepository,
+    JobSeekerRepository,
     AiGenerateService,
+    AIConfigService,
+    AIConfigRepository,
     LoginService,
     UserService,
     LoginRepository,
     EmployeeRepository,
-    JobPostingRepository,
-    JobSeekerRepository,
-    AIConfigService,
-    AIConfigRepository,
   ],
 })
 export class ScoutModule {}

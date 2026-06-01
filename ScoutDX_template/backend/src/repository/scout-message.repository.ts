@@ -101,6 +101,7 @@ export class ScoutMessageRepository {
     return rows[0];
   }
 
+<<<<<<< HEAD
 
   async findById(id: string): Promise<any | null> {
     const rows = await this.dataSource.query(
@@ -157,12 +158,116 @@ export class ScoutMessageRepository {
 
     return rows[0] ?? null;
   }
+=======
+  async findById(id: string): Promise<any | null> {
+    const rows = await this.dataSource.query(
+      `
+        SELECT
+          scout_message_id::text AS id,
+          created_at,
+          COALESCE(created_by_employee_id, '') AS creator,
+          '' AS title,
+          COALESCE(message_content, '') AS body,
+          COALESCE(status, 'DRAFT') AS status
+        FROM SCOUT_MESSAGES
+        WHERE scout_message_id = $1
+        LIMIT 1
+      `,
+      [Number(id)],
+    );
+>>>>>>> origin/main
 
-  async updateScout(
-    id: string,
-    body: string,
-    status: string,
-  ): Promise<any | null> {
+    return rows[0] ?? null;
+  }
+
+  async findApprovalDetailById(id: string): Promise<{
+    scoutBody: string;
+    jobInfo: {
+      jobPostingId: number | null;
+      companyName: string;
+      jobTitle: string;
+      jobDescription: string;
+      minSalary: number | null;
+      maxSalary: number | null;
+      requiredSkills: string;
+      jobAppeal: string;
+      workLocation: string;
+    };
+    commentHistories: Array<{
+      historyId: number;
+      returnComment: string;
+      returnedAt: string | null;
+      returnedByEmployeeId: string | null;
+      returnedByEmployeeName: string;
+    }>;
+  } | null> {
+    const scoutRows = await this.dataSource.query(
+      `
+        SELECT
+          sm.scout_message_id,
+          COALESCE(sm.message_content, '') AS scout_body,
+          sm.job_posting_id,
+          COALESCE(jp.company_name, '') AS company_name,
+          COALESCE(jp.job_title, '') AS job_title,
+          COALESCE(jp.job_description, '') AS job_description,
+          jp.min_salary,
+          jp.max_salary,
+          COALESCE(jp.required_skills, '') AS required_skills,
+          COALESCE(jp.job_appeal, '') AS job_appeal,
+          COALESCE(jp.work_location, '') AS work_location
+        FROM SCOUT_MESSAGES sm
+        LEFT JOIN JOB_POSTINGS jp ON jp.job_posting_id = sm.job_posting_id
+        WHERE sm.scout_message_id = $1
+        LIMIT 1
+      `,
+      [Number(id)],
+    );
+
+    if (!scoutRows.length) {
+      return null;
+    }
+
+    const historyRows = await this.dataSource.query(
+      `
+        SELECT
+          h.scout_message_history_id,
+          COALESCE(h.return_comment, '') AS return_comment,
+          h.returned_at,
+          h.returned_by_employee_id,
+          COALESCE(e.name, '') AS returned_by_employee_name
+        FROM SCOUT_MESSAGE_HISTORIES h
+        LEFT JOIN EMPLOYEES e ON e.employee_id = h.returned_by_employee_id
+        WHERE h.scout_message_id = $1
+        ORDER BY h.returned_at DESC NULLS LAST, h.scout_message_history_id DESC
+      `,
+      [Number(id)],
+    );
+
+    const scoutRow = scoutRows[0];
+    return {
+      scoutBody: scoutRow.scout_body,
+      jobInfo: {
+        jobPostingId: scoutRow.job_posting_id,
+        companyName: scoutRow.company_name,
+        jobTitle: scoutRow.job_title,
+        jobDescription: scoutRow.job_description,
+        minSalary: scoutRow.min_salary,
+        maxSalary: scoutRow.max_salary,
+        requiredSkills: scoutRow.required_skills,
+        jobAppeal: scoutRow.job_appeal,
+        workLocation: scoutRow.work_location,
+      },
+      commentHistories: historyRows.map((row: any) => ({
+        historyId: row.scout_message_history_id,
+        returnComment: row.return_comment,
+        returnedAt: row.returned_at,
+        returnedByEmployeeId: row.returned_by_employee_id,
+        returnedByEmployeeName: row.returned_by_employee_name,
+      })),
+    };
+  }
+
+  async updateScout(id: string, body: string, status: string): Promise<any | null> {
     const rows = await this.dataSource.query(
       `
         UPDATE SCOUT_MESSAGES
@@ -491,6 +596,14 @@ export class ScoutMessageRepository {
         await runner.rollbackTransaction();
         return null;
       }
+
+      await runner.query(`
+        SELECT setval(
+          pg_get_serial_sequence('SCOUT_MESSAGE_HISTORIES', 'scout_message_history_id'),
+          COALESCE((SELECT MAX(scout_message_history_id) FROM SCOUT_MESSAGE_HISTORIES), 0) + 1,
+          false
+        )
+      `);
 
       const current = currentRows[0];
       const historyRows = await runner.query(

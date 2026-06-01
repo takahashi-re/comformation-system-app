@@ -18,7 +18,16 @@
           <div class="box">
             <div class="title">求人内容表示</div>
             <div class="content">
-              {{ scout.job }}
+              <div><strong>企業名:</strong> {{ jobInfo.companyName || '未設定' }}</div>
+              <div><strong>求人タイトル:</strong> {{ jobInfo.jobTitle || '未設定' }}</div>
+              <div><strong>仕事内容:</strong> {{ jobInfo.jobDescription || '未設定' }}</div>
+              <div><strong>必要スキル:</strong> {{ jobInfo.requiredSkills || '未設定' }}</div>
+              <div><strong>魅力:</strong> {{ jobInfo.jobAppeal || '未設定' }}</div>
+              <div><strong>勤務地:</strong> {{ jobInfo.workLocation || '未設定' }}</div>
+              <div>
+                <strong>想定年収:</strong>
+                {{ formatSalary(jobInfo.minSalary, jobInfo.maxSalary) }}
+              </div>
             </div>
           </div>
 
@@ -26,8 +35,12 @@
           <div class="box">
             <div class="title">コメント履歴</div>
             <div class="content">
-              <div v-for="(c, i) in history" :key="i">
-                {{ c }}
+              <div v-if="history.length === 0">コメント履歴はありません</div>
+              <div v-for="item in history" :key="item.historyId" class="history-item">
+                <div class="history-meta">
+                  {{ item.returnedByEmployeeName || item.returnedByEmployeeId || '不明' }} / {{ formatDate(item.returnedAt) }}
+                </div>
+                <div>{{ item.returnComment || '（コメントなし）' }}</div>
               </div>
             </div>
           </div>
@@ -39,6 +52,14 @@
         <div class="box">
           <div class="title">コメント</div>
           <textarea v-model="comment" placeholder="コメントを入力"></textarea>
+          <div v-if="isAdminReviewer" class="reapply-target">
+            <label for="reapplyTarget"><strong>差戻し後の再申請先</strong></label>
+            <select id="reapplyTarget" v-model="reapplyTarget">
+              <option value="">選択してください</option>
+              <option value="APPROVER">営業承認者</option>
+              <option value="ADMIN">管理者</option>
+            </select>
+          </div>
         </div>
 
         <div class="check-area">
@@ -78,20 +99,36 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { fetchApprovalDetail, approveScout, rejectScout } from '../../api/scoutApi'
+import { getMeApi } from '../../api/loginApi'
 
 const route = useRoute()
+const router = useRouter()
 
 const id = route.params.id
 
 const scout = ref({
-  body: '',
-  job: ''
+  body: ''
+})
+
+const jobInfo = ref({
+  jobPostingId: null,
+  companyName: '',
+  jobTitle: '',
+  jobDescription: '',
+  minSalary: null,
+  maxSalary: null,
+  requiredSkills: '',
+  jobAppeal: '',
+  workLocation: ''
 })
 
 const history = ref([])
 const comment = ref('')
+const reapplyTarget = ref('')
+const currentUser = ref(null)
 
 const reasons = ref({
   integrity: false,
@@ -102,48 +139,151 @@ const reasons = ref({
   typo: false
 })
 
+const readCurrentUser = () => currentUser.value || {}
+const currentUserPositionId = computed(() => Number(readCurrentUser()?.position_id ?? 0))
+const isAdminReviewer = computed(() => currentUserPositionId.value === 3)
+
+const ensureCurrentUser = async () => {
+  if (currentUser.value) {
+    return currentUser.value
+  }
+
+  try {
+    currentUser.value = await getMeApi()
+  } catch (e) {
+    console.error('ユーザー取得エラー', e)
+    currentUser.value = null
+  }
+
+  return currentUser.value
+}
+
 /* 初期表示（DB取得） */
 onMounted(async () => {
   try {
-    const res = await fetch(`/api/scout/${id}`)
-    const data = await res.json()
+    const [data] = await Promise.all([
+      fetchApprovalDetail(String(id)),
+      ensureCurrentUser(),
+    ])
 
-    scout.value.body = data.body
-    scout.value.job = data.job
-    history.value = data.history || []
+    scout.value.body = data.scoutBody
+    jobInfo.value = data.jobInfo
+    history.value = data.commentHistories || []
   } catch (e) {
     console.error('取得エラー', e)
   }
 })
 
-/* 承認 */
-const approve = async () => {
-  await fetch(`/api/scout/${id}/approve`, {
-    method: 'POST'
-  })
+const formatDate = (value) => {
+  if (!value) {
+    return '日時不明'
+  }
 
-  alert('承認しました')
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return '日時不明'
+  }
+
+  return date.toLocaleString('ja-JP')
+}
+
+const formatSalary = (min, max) => {
+  if (min == null && max == null) {
+    return '未設定'
+  }
+
+  const minText = min == null ? '' : `${Number(min).toLocaleString()}円`
+  const maxText = max == null ? '' : `${Number(max).toLocaleString()}円`
+
+  if (minText && maxText) {
+    return `${minText} - ${maxText}`
+  }
+
+  return minText || maxText || '未設定'
+}
+
+
+/* 承認 */ //承認者が営業承認者か、管理者かで、ステータス変更が変わる。
+const approve = async () => {
+  const user = await ensureCurrentUser()
+  const approverEmployeeId =
+    user?.employee_id || ''
+
+  if (!approverEmployeeId) {
+    alert('承認者IDが取得できません')
+    return
+  }
+
+  const reasonKeys = Object.entries(reasons.value)
+    .filter(([, checked]) => checked)
+    .map(([key]) => key)
+
+  try {
+    await approveScout({
+      id: String(id),
+      approverEmployeeId,
+      comment: comment.value.trim(),
+      reasonKeys
+    })
+
+    alert('承認しました')
+    router.push('/scout/list')
+  } catch (e) {
+    console.error('承認エラー', e)
+    alert('承認に失敗しました')
+  } 
 }
 
 /* 差戻し */
 const reject = async () => {
-  if (!comment.value) {
+  const returnComment = comment.value.trim()
+
+  if (!returnComment) {
     alert('コメントを入力してください')
     return
   }
 
-  await fetch(`/api/scout/${id}/reject`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      comment: comment.value,
-      reasons: reasons.value
+  if (returnComment.length > 2000) {
+    alert('コメントは2000文字以内で入力してください')
+    return
+  }
+
+  const user = await ensureCurrentUser()
+  const returnedByEmployeeId =
+    user?.employee_id || ''
+
+  if (!returnedByEmployeeId) {
+    alert('差戻し担当者IDが取得できません')
+    return
+  }
+
+  if (isAdminReviewer.value && reapplyTarget.value !== 'APPROVER' && reapplyTarget.value !== 'ADMIN') {
+    alert('再申請先を選択してください')
+    return
+  }
+
+  const reasonKeys = Object.entries(reasons.value)
+    .filter(([, checked]) => checked)
+    .map(([key]) => key)
+
+  try {
+    await rejectScout({
+      id: String(id),
+      returnedByEmployeeId,
+      returnComment,
+      reasonKeys,
+      reapplyTarget: isAdminReviewer.value ? reapplyTarget.value : undefined
     })
-  })
+  } catch (e) {
+    console.error('差戻しエラー', e)
+    alert('差戻しに失敗しました')
+    return
+  }
 
   alert('差戻しました')
+
+  // 一覧へ戻る（図の最後）
+  router.push('/scout/list')
 }
 </script>
 
@@ -210,6 +350,18 @@ min-width: 320px;
 min-height: 220px;
 }
 
+.history-item {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.history-meta {
+  margin-bottom: 4px;
+  color: #4b5563;
+  font-size: 0.85rem;
+}
+
 
 /* コメント */
 /* コメント */
@@ -226,6 +378,19 @@ textarea {
 
 .right .box {
   overflow: hidden;     /* はみ出し対策 */
+}
+
+.reapply-target {
+  margin: 0 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reapply-target select {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 6px;
 }
 
 /* チェック */
