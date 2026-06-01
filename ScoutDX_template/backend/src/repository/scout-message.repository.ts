@@ -95,7 +95,7 @@ export class ScoutMessageRepository {
           COALESCE(message_content, '') AS body,
           COALESCE(status, 'DRAFT') AS status
       `,
-      [scout?.body ?? '', scout?.creator ?? null, scout?.status ?? 'DRAFT'],
+      [scout?.body ?? "", scout?.creator ?? null, scout?.status ?? "DRAFT"],
     );
 
     return rows[0];
@@ -121,7 +121,11 @@ export class ScoutMessageRepository {
     return rows[0] ?? null;
   }
 
-  async updateScout(id: string, body: string, status: string): Promise<any | null> {
+  async updateScout(
+    id: string,
+    body: string,
+    status: string,
+  ): Promise<any | null> {
     const rows = await this.dataSource.query(
       `
         UPDATE SCOUT_MESSAGES
@@ -155,7 +159,7 @@ export class ScoutMessageRepository {
       [Number(id)],
     );
 
-    return rows[0]?.return_comment ?? '';
+    return rows[0]?.return_comment ?? "";
   }
 
   async saveGeneratedMessage(messageContent: string): Promise<number> {

@@ -2,6 +2,7 @@
   <div class="app-shell">
     <header v-if="showHeader" class="app-header">
       <nav class="app-nav">
+        <RouterLink to="/dashboard" class="nav-link">ダッシュボード</RouterLink>
         <RouterLink to="/scout/list" class="nav-link">scout文一覧</RouterLink>
         <RouterLink
           to="/admin/users"
