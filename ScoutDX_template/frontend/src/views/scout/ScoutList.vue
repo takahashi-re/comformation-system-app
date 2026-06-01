@@ -305,6 +305,7 @@ export default {
     },
 
     goConditions() {
+      if (this.role !== "approver" && this.role !== "admin") return;
       this.$router.push({ name: "conditions" });
     },
 
