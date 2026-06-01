@@ -99,7 +99,7 @@ const handleSubmit = async (): Promise<void> => {
 h2 {
   margin: 0 0 32px;
   color: #1f2937;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 700;
   text-align: center;
   letter-spacing: -0.02em;
@@ -212,7 +212,7 @@ p.error {
   }
 
   h2 {
-    font-size: 22px;
+    font-size: 18px;
     margin-bottom: 28px;
   }
 
@@ -238,7 +238,7 @@ p.error {
   }
 
   h2 {
-    font-size: 20px;
+    font-size: 16px;
     margin-bottom: 24px;
   }
 
