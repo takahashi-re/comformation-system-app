@@ -7,13 +7,16 @@ export interface LoginUser {
   position_id: number | null;
 }
 
-/**
- * Cookie セッションを発行するログイン
- */
+export interface LoginResponse {
+  access_token: string;
+  user: LoginUser;
+}
+
+// ログインAPIラッパー
 export async function loginApi(
   employee_id: string,
   password: string,
-): Promise<void> {
+): Promise<LoginResponse> {
   if (!employee_id.trim() || !password.trim()) {
     throw new Error("employee_id と password は必須です");
   }
@@ -41,53 +44,20 @@ export function saveToken(token: string): void {
   localStorage.setItem("access_token", token);
 }
 
-export async function getMeApi(): Promise<LoginUser> {
-  try {
-    const { data } = await apiClient.get<LoginUser>("/api/login/me");
-    return data;
-  } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      const message =
-        (error.response?.data as { message?: string } | undefined)?.message ||
-        "ユーザー情報取得に失敗しました";
-      throw new Error(message);
-    }
-    throw new Error("ユーザー情報取得に失敗しました");
-  }
+export function saveUser(user: LoginUser): void {
+  localStorage.setItem("user", JSON.stringify(user));
 }
 
-export async function logoutApi(): Promise<void> {
-  try {
-    await apiClient.post("/api/login/logout");
-  } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      console.error("ログアウト中にエラーが発生しました:", error);
-    }
-  }
+export function getToken(): string | null {
+  return localStorage.getItem("access_token");
 }
 
-export async function changePasswordApi(
-  old_password: string,
-  new_password: string,
-): Promise<void> {
-  if (!old_password.trim() || !new_password.trim()) {
-    throw new Error("現在のパスワードと新しいパスワードは必須です");
-  }
+export function getUser(): LoginUser | null {
+  const u = localStorage.getItem("user");
+  return u ? (JSON.parse(u) as LoginUser) : null;
+}
 
-  try {
-    await apiClient.post("/api/login/change-password", {
-      old_password,
-      new_password,
-    });
-  } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      const message =
-        (error.response?.data as { message?: string } | undefined)?.message ||
-        (error.code === "ERR_NETWORK"
-          ? "APIに接続できません。バックエンドが起動しているか確認してください"
-          : "パスワード変更に失敗しました");
-      throw new Error(message);
-    }
-    throw new Error("パスワード変更に失敗しました");
-  }
+export function clearLogin(): void {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("user");
 }

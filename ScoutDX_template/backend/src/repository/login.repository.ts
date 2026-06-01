@@ -29,24 +29,6 @@ export class LoginRepository {
       return null;
     }
 
-    return rows[0]; // オブジェクトとして返す
-  }
-
-  async updatePassword(
-    employeeId: string,
-    newPassword: string,
-  ): Promise<boolean> {
-    const rows = await this.dataSource.query(
-      `
-        UPDATE EMPLOYEES
-        SET password = $2,
-            updated_at = NOW()
-        WHERE employee_id = $1
-        RETURNING employee_id
-      `,
-      [employeeId, newPassword],
-    );
-
-    return rows.length > 0;
+    return rows[0];
   }
 }
