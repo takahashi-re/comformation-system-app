@@ -303,6 +303,11 @@ export class ScoutMessageRepository {
     limit = 20,
     order = "updated_at",
   ): Promise<ScoutMessageRow[]> {
+    const orderColumn =
+      order === "created_at" || order === "sent_at" || order === "updated_at"
+        ? order
+        : "updated_at";
+
     return this.dataSource.query(
       `
         SELECT
@@ -317,10 +322,10 @@ export class ScoutMessageRepository {
           created_at,
           updated_at
         FROM SCOUT_MESSAGES
-        ORDER BY $2 DESC NULLS LAST, scout_message_id DESC
+        ORDER BY ${orderColumn} DESC NULLS LAST, scout_message_id DESC
         LIMIT $1
       `,
-      [limit, order],
+      [limit],
     );
   }
 

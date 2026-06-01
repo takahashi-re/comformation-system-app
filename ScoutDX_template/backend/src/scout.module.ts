@@ -17,10 +17,9 @@ import { AIConfigRepository } from "./repository/ai-config.repository";
 import { ScoutService } from "./service/scout.service";
 import { UserService } from "./service/user.service";
 import { ScoutMessageEntity } from "./type/scout-message";
-import { ScoutEntity } from "./type/scout";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ScoutEntity, ScoutMessageEntity])],
+  imports: [TypeOrmModule.forFeature([ScoutMessageEntity])],
   controllers: [
     ScoutController,
     AiGenerateController,
