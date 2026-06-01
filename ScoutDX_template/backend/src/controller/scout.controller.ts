@@ -5,7 +5,11 @@ import {
   Param,
   Post,
   Put,
+  Query,
+  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { ScoutService } from '../service/scout.service';
 import { ScoutEntity } from '../type/scout';
 import { LoginService } from '../service/login.service';
