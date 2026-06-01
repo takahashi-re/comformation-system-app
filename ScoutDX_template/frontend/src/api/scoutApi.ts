@@ -37,26 +37,25 @@ export async function createScout(payload: ScoutEntity): Promise<ScoutEntity> {
   return data
 }
 
-
-//IDを渡して、スカウト文と最新の差戻しコメントを取得するAPI
+// IDを渡して、スカウト文と最新の差戻しコメントを取得するAPI
 export async function fetchScoutDetail(id: number): Promise<{ scout: ScoutEntity, latestRejectComment: string }> {
   const { data } = await apiClient.get(`/api/scouts/${id}`)
   return data
 }
 
-export async function fetchApprovalDetail(id: string | number): Promise<ApprovalDetailResponse> {
+export async function fetchApprovalDetail(id: number | string): Promise<ApprovalDetailResponse> {
   const { data } = await apiClient.get<ApprovalDetailResponse>(`/api/scouts/${id}/approval-detail`)
   return data
 }
 
-//スカウト文を保存するAPI
+// スカウト文を保存するAPI
 export async function updateScout(payload: { id: number, body: string, status: string }): Promise<void> {
   await apiClient.put(`/api/scouts/${payload.id}`, payload)
 }
 
-//スカウト文を承認するAPI
+// スカウト文を承認するAPI
 export async function approveScout(payload: {
-  id: number
+  id: number | string
   approverEmployeeId: string
   comment: string
   reasonKeys: string[]
@@ -64,8 +63,9 @@ export async function approveScout(payload: {
   await apiClient.post(`/api/scouts/${payload.id}/approve`, payload)
 }
 
+// スカウト文を差戻しするAPI
 export async function rejectScout(payload: {
-  id: number
+  id: number | string
   returnedByEmployeeId: string
   returnComment: string
   reasonKeys: string[]

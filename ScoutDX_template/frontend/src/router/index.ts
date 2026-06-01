@@ -16,13 +16,19 @@ import ScoutDetail from "../views/scout/ScoutDetail.vue";
 import ScoutEdit from "../views/scout/ScoutEdit.vue";
 import ScoutList from "../views/scout/ScoutList.vue";
 import ApprovalDetail from "../views/approval/ApprovalDetail.vue";
+import Dashboard from "../views/dashboard/Dashboard.vue";
+import AIConfig from "../views/setting/AIConfig.vue";
+import { useLoginStore } from "../store/login.Store";
 
-import { getToken } from "../api/loginApi";
+const getHomePath = () => "/dashboard";
+
+const DEFAULT_ALLOWED_POSITION_IDS = [1, 2, 3];
+//1=営業、2=営業承認者、3 = 管理者
 
 const routes: RouteRecordRaw[] = [
   {
     path: "/",
-    redirect: "/dashboard",
+    redirect: getHomePath,
   },
   {
     path: "/login",
