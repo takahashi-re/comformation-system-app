@@ -185,7 +185,7 @@ const formatSalary = (min, max) => {
 }
 
 
-/* 承認 */ //承認者が営業承認者か、管理者かで、ステータス変更が変わる。
+/* 承認 */ //承認者が営業承認者か、管理者かでステータス変更が変わる。
 const approve = async () => {
   const approverEmployeeId =
     readCurrentUser()?.employee_id || ''
