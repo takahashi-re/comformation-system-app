@@ -147,19 +147,20 @@ export class ScoutService {
       throw new NotFoundException('承認者が見つかりません');
     }
 
-    const isAdmin = approver.position_id === 3 || approver.position_name === 'Manager';
-    const isApprover = approver.position_id === 2 || approver.position_name === 'Leader';
+    const isAdmin = approver.position_id === 3 || approver.position_name === 'Manager'; //管理者
+    const isApprover = approver.position_id === 2 || approver.position_name === 'Leader'; //承認者
 
     if (!isAdmin && !isApprover) {
       throw new BadRequestException('このユーザーには承認権限がありません');
     }
 
     const nextStatus = isAdmin ? 'AVAILABLE' : 'PENDING_ADMIN';
-    const updated = await this.scoutRepository.updateStatus(
-      scoutMessageId,
-      nextStatus,
-      dto.approverEmployeeId.trim(),
-    );
+    const updated = await this.scoutRepository.approveAndSaveHistory({
+      scout_message_id: scoutMessageId,
+      approved_by_employee_id: dto.approverEmployeeId.trim(),
+      comment: dto.comment?.trim() ?? '',
+      next_status: nextStatus,
+    });
 
     if (!updated) {
       throw new NotFoundException('対象のスカウト文が見つかりません');

@@ -23,6 +23,7 @@ import { useLoginStore } from "../store/login.Store";
 const getHomePath = () => "/dashboard";
 
 const DEFAULT_ALLOWED_POSITION_IDS = [1, 2, 3];
+//1=営業、2=営業承認者、3 = 管理者
 
 const routes: RouteRecordRaw[] = [
   {
