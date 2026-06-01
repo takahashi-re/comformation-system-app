@@ -26,7 +26,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useLoginStore } from "./store/login.Store";
 
@@ -42,8 +42,14 @@ const userName = computed(
 );
 const userPositionId = computed(() => loginStore.user?.position_id ?? 0);
 
-const handleLogout = (): void => {
-  loginStore.logout();
+onMounted(async () => {
+  if (route.path !== "/login") {
+    await loginStore.checkSession();
+  }
+});
+
+const handleLogout = async (): Promise<void> => {
+  await loginStore.logout();
   router.push("/login");
 };
 </script>
