@@ -95,71 +95,184 @@ onMounted(async () => {
 
 <style scoped>
 .detail-container {
-  padding: 16px;
-  background: #fff;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
 }
 
-/* タイトルバー */
+/* タイトル */
 h2 {
-  background: #2f6da3;
-  color: white;
-  padding: 10px;
-  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  margin: 0 0 32px;
+  color: #1f2937;
+  background: none;
+  padding: 0;
 }
 
 /* テーブル風 */
 .table {
-  border: 1px solid #999;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  margin-bottom: 32px;
 }
 
 /* 行 */
 .row {
   display: grid;
   grid-template-columns: 200px 1fr;
-  border-bottom: 1px solid #999;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.row:last-child {
+  border-bottom: none;
 }
 
 /* 左ラベル */
 .label {
-  background: #c7d4e5;
-  padding: 8px;
-  border-right: 1px solid #999;
-  font-weight: bold;
+  background: #f9fafb;
+  padding: 14px 20px;
+  border-right: 1px solid #e5e7eb;
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  letter-spacing: -0.01em;
 }
 
 /* 右値 */
 .value {
-  padding: 8px;
-  background: #fff;
+  padding: 14px 20px;
+  background: #ffffff;
+  font-size: 14px;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  line-height: 1.6;
 }
 
 /* 下の2カラム */
 .bottom {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: 10px;
-  margin-top: 16px;
+  gap: 24px;
 }
 
 /* ボックス */
 .box {
-  border: 1px solid #999;
-  background: #fff;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
 /* ボックスタイトル */
 .box-title {
-  background: #2f6da3;
+  background: #475569;
   color: white;
-  padding: 6px;
-  font-weight: bold;
+  padding: 12px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: -0.01em;
 }
 
 /* ボディ */
 .box-body {
-  padding: 10px;
-  background: #fff;
-  min-height: 120px;
+  padding: 20px;
+  background: #ffffff;
+  min-height: 200px;
   white-space: pre-wrap;
+  font-size: 15px;
+  color: #1f2937;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1024px) {
+  .bottom {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .detail-container {
+    padding: 32px 16px 48px;
+  }
+
+  h2 {
+    font-size: 24px;
+    margin-bottom: 24px;
+  }
+
+  .table {
+    margin-bottom: 24px;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .label {
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+
+  .value {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+
+  .box-title {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .box-body {
+    padding: 16px;
+    font-size: 14px;
+    min-height: 150px;
+  }
+
+  .bottom {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .detail-container {
+    padding: 24px 12px 40px;
+  }
+
+  h2 {
+    font-size: 22px;
+  }
+
+  .label {
+    padding: 8px 14px;
+  }
+
+  .value {
+    padding: 10px 14px;
+  }
+
+  .box-title {
+    padding: 8px 14px;
+  }
+
+  .box-body {
+    padding: 14px;
+    font-size: 13px;
+  }
 }
 </style>
