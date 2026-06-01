@@ -1,6 +1,28 @@
 import type { ScoutEntity } from '../type/scout'
 import { apiClient } from './client'
 
+export interface ApprovalDetailResponse {
+  scoutBody: string
+  jobInfo: {
+    jobPostingId: number | null
+    companyName: string
+    jobTitle: string
+    jobDescription: string
+    minSalary: number | null
+    maxSalary: number | null
+    requiredSkills: string
+    jobAppeal: string
+    workLocation: string
+  }
+  commentHistories: Array<{
+    historyId: number
+    returnComment: string
+    returnedAt: string | null
+    returnedByEmployeeId: string | null
+    returnedByEmployeeName: string
+  }>
+}
+
 export async function fetchScouts(): Promise<ScoutEntity[]> {
   const { data } = await apiClient.get<ScoutEntity[]>('/api/scouts')
   return data
@@ -18,6 +40,11 @@ export async function fetchScoutDetail(id: number): Promise<{ scout: ScoutEntity
   return data
 }
 
+export async function fetchApprovalDetail(id: number | string): Promise<ApprovalDetailResponse> {
+  const { data } = await apiClient.get<ApprovalDetailResponse>(`/api/scouts/${id}/approval-detail`)
+  return data
+}
+
 //スカウト文を保存するAPI
 export async function updateScout(payload: { id: number, body: string, status: string }): Promise<void> {
   await apiClient.put(`/api/scouts/${payload.id}`, payload)
@@ -25,10 +52,20 @@ export async function updateScout(payload: { id: number, body: string, status: s
 
 //スカウト文を承認するAPI
 export async function approveScout(payload: {
-  id: number
+  id: number | string
   approverEmployeeId: string
   comment: string
   reasonKeys: string[]
 }): Promise<void> {
   await apiClient.post(`/api/scouts/${payload.id}/approve`, payload)
+}
+
+export async function rejectScout(payload: {
+  id: number | string
+  returnedByEmployeeId: string
+  returnComment: string
+  reasonKeys: string[]
+  reapplyTarget?: 'APPROVER' | 'ADMIN'
+}): Promise<void> {
+  await apiClient.post(`/api/scouts/${payload.id}/reject`, payload)
 }
