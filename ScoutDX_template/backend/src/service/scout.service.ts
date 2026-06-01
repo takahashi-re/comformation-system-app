@@ -6,8 +6,18 @@ import { ScoutEntity } from '../type/scout';
 export class ScoutService {
   constructor(private readonly scoutRepository: ScoutMessageRepository) {}
 
-  findAll(): Promise<ScoutEntity[]> {
-    return this.scoutRepository.findAll();
+  async findAll(): Promise<ScoutEntity[]> {
+    const rows = await this.scoutRepository.findAllActive();
+    return rows.map((row) => ({
+      id: String(row.scout_message_id),
+      createdAt: row.created_at ? new Date(row.created_at) : undefined,
+      creator: row.created_by_employee_id ?? '',
+      title: '',
+      body: row.message_content ?? '',
+      status: row.status ?? '',
+      company_name: row.company_name ?? '',
+      job_title: row.job_title ?? '',
+    })) as ScoutEntity[];
   }
 
   async create(input: ScoutEntity): Promise<ScoutEntity> {
