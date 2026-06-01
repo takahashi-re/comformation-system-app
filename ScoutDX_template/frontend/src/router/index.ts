@@ -104,8 +104,8 @@ export const router = createRouter({
   routes,
 });
 
-router.beforeEach(async (to: RouteLocationNormalized) => {
-  const loginStore = useLoginStore();
+router.beforeEach((to: RouteLocationNormalized) => {
+  const isLoggedIn = Boolean(getToken());
 
   if (to.path === "/" && isLoggedIn) {
     return getHomePath();
@@ -117,17 +117,7 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
     return true;
   }
 
-  if (to.path === "/login") {
-    if (loginStore.isLoggedIn) {
-      await loginStore.logout();
-    } else {
-      loginStore.user = null;
-      loginStore.error = "";
-    }
-    return true;
-  }
-
-  if (to.meta.requiresAuth && !loginStore.isLoggedIn) {
+  if (to.meta.requiresAuth && !isLoggedIn) {
     return "/login";
   }
   return true;

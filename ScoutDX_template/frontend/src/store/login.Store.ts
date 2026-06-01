@@ -3,79 +3,49 @@ import { defineStore } from "pinia";
 import {
   type LoginUser,
   loginApi,
-  getMeApi,
-  logoutApi,
+  saveToken,
+  saveUser,
+  clearLogin,
+  getToken,
+  getUser,
 } from "../api/loginApi";
 
 export const useLoginStore = defineStore("login", () => {
-  // ✅ token を削除（Cookie で管理）
-  const user = ref<LoginUser | null>(null);
+  const access_token = ref<string>(getToken() || "");
+  const user = ref<LoginUser | null>(getUser());
   const error = ref<string>("");
+  const isLoggedIn = computed(() => access_token.value.length > 0);
 
-  // ✅ user が存在するかどうかで判断
-  const isLoggedIn = computed(() => user.value !== null);
-
-  /**
-   * ✅ ログイン処理
-   * 1. POST /api/login (username, password)
-   * 2. Cookie に session_token をセット
-   * 3. GET /api/login/me で user 情報取得
-   */
   const login = async (
     employee_id: string,
     password: string,
   ): Promise<boolean> => {
     error.value = "";
     try {
-      // ✅ ステップ 1: ログイン（Cookie をセット）
-      await loginApi(employee_id, password);
-
-      // ✅ ステップ 2: ユーザー情報を取得
-      const userData = await getMeApi();
-      user.value = userData;
-
+      const data = await loginApi(employee_id, password);
+      saveToken(data.access_token);
+      saveUser(data.user);
+      access_token.value = data.access_token;
+      user.value = data.user;
       return true;
     } catch (e: unknown) {
       error.value = e instanceof Error ? e.message : "ログインに失敗しました";
-      user.value = null;
       return false;
     }
   };
 
-  /**
-   * ✅ ログアウト処理
-   * 1. POST /api/login/logout (Cookie 削除)
-   * 2. ローカルの user をクリア
-   */
-  const logout = async (): Promise<void> => {
-    try {
-      await logoutApi();
-    } catch (e: unknown) {
-      console.error("ログアウト中にエラーが発生しました:", e);
-    }
+  const logout = (): void => {
+    clearLogin();
+    access_token.value = "";
     user.value = null;
-    error.value = "";
-  };
-
-  /**
-   * ✅ ページ読み込み時にセッションが有効か確認
-   * （リロード時に user 情報を復元）
-   */
-  const checkSession = async (): Promise<void> => {
-    try {
-      const userData = await getMeApi();
-      user.value = userData;
-    } catch (e: unknown) {
-      user.value = null;
-    }
   };
 
   return {
+    access_token,
     user,
     error,
     isLoggedIn,
     login,
     logout,
-    checkSession,
   };
 });

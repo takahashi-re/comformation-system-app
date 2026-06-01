@@ -4,15 +4,11 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { LoginRepository } from "../repository/login.repository";
-import {
-  LoginRequest,
-  LoginResponse,
-  LoginSession,
-} from "../type/login";
+import { LoginRequest, LoginResponse, LoginSession } from "../type/login";
 
-@Injectable() // DIコンテナに登録するためのデコレーター
+@Injectable()
 export class LoginService {
-  private readonly sessionStore = new Map<string, LoginSession>(); // メモリ上のセッションストア（token -> session）
+  private readonly sessionStore = new Map<string, LoginSession>();
 
   constructor(private readonly loginRepository: LoginRepository) {}
 
@@ -45,34 +41,10 @@ export class LoginService {
 
     this.sessionStore.set(token, session);
 
-    return { access_token: token, user: session };
-  }
-
-  async changePassword(
-    sessionToken: string,
-    oldPassword: string,
-    newPassword: string,
-  ): Promise<void> {
-    const session = this.getSessionByToken(sessionToken);
-    if (!newPassword.trim()) {
-      throw new BadRequestException("新しいパスワードは必須です");
-    }
-
-    const employee = await this.loginRepository.findByEmployeeIdAndPassword(
-      session.employee_id,
-      oldPassword,
-    );
-    if (!employee) {
-      throw new UnauthorizedException("現在のパスワードが一致しません");
-    }
-
-    const updated = await this.loginRepository.updatePassword(
-      session.employee_id,
-      newPassword,
-    );
-    if (!updated) {
-      throw new BadRequestException("パスワードを更新できませんでした");
-    }
+    return {
+      access_token: token,
+      user: session,
+    };
   }
 
   private generateToken(): string {
@@ -85,9 +57,5 @@ export class LoginService {
       throw new UnauthorizedException("ログインセッションが存在しません");
     }
     return session;
-  }
-
-  clearSession(token: string): void {
-    this.sessionStore.delete(token);
   }
 }
