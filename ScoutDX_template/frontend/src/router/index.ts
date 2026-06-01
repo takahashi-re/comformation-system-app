@@ -15,16 +15,9 @@ import ScoutCreate from "../views/scout/ScoutCreate.vue";
 import ScoutDetail from "../views/scout/ScoutDetail.vue";
 import ScoutEdit from "../views/scout/ScoutEdit.vue";
 import ScoutList from "../views/scout/ScoutList.vue";
-import Dashboard from "../views/dashboard/Dashboard.vue";
 import ApprovalDetail from "../views/approval/ApprovalDetail.vue";
-import AIConfig from "../views/setting/AIConfig.vue";
-import { useLoginStore } from "../store/login.Store";
 
-const getHomePath = () => "/dashboard";
-
-// ルートごとに position_id の許可一覧を指定するための共通キー。
-// 例: meta: { requiresAuth: true, allowedPositionIds: [1, 2] }
-const DEFAULT_ALLOWED_POSITION_IDS = [1, 2, 3]; // デフォルトで許可する position_id のリスト
+import { getToken } from "../api/loginApi";
 
 const routes: RouteRecordRaw[] = [
   {
@@ -117,6 +110,12 @@ const routes: RouteRecordRaw[] = [
     path: "/auth/change-password",
     name: "change-password",
     component: ChangePassword,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/approval/:id",
+    name: "approval-detail",
+    component: ApprovalDetail,
     meta: { requiresAuth: true },
   },
 ];
