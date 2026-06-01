@@ -124,40 +124,164 @@ onMounted(() => {
 
 <style scoped>
 .page {
-	max-width: 960px;
-	margin: 0 auto;
-	background: #fff;
-	border: 1px solid #d9dfe8;
-	border-radius: 8px;
-	padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 48px 24px 64px;
+}
+
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  margin: 0 0 32px;
+  color: #1f2937;
 }
 
 .user-info {
-	margin-bottom: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 32px;
+  margin-bottom: 32px;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.user-info p {
+  font-size: 15px;
+  color: #1f2937;
+  line-height: 1.7;
+  margin: 0 0 16px;
+  display: flex;
+  align-items: baseline;
+}
+
+.user-info p:last-child {
+  margin-bottom: 0;
 }
 
 .error {
-	color: #c0392b;
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 16px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 24px;
+  border: 1px solid #fecaca;
 }
 
 .actions {
-	display: flex;
-	gap: 10px;
+  display: flex;
+  gap: 12px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+  flex-wrap: wrap;
 }
 
-.danger {
-	background: #c0392b;
-	border: 1px solid #c0392b;
-	color: #fff;
+.actions button {
+  min-width: 140px;
+  padding: 11px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: -0.01em;
+  background: #ffffff;
+  color: #374151;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 }
 
-.danger:disabled {
-	opacity: 0.6;
-	cursor: not-allowed;
+.actions button:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.08);
+}
+
+.actions button:active:not(:disabled) {
+  background: #f3f4f6;
 }
 
 .actions button:disabled {
-	opacity: 0.6;
-	cursor: not-allowed;
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #f9fafb;
+  color: #9ca3af;
+}
+
+.actions button.danger {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #ffffff;
+}
+
+.actions button.danger:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.15);
+}
+
+.actions button.danger:active:not(:disabled) {
+  background: #991b1b;
+}
+
+.actions button.danger:disabled {
+  background: #fca5a5;
+  border-color: #fca5a5;
+  color: #ffffff;
+  opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 32px 16px 48px;
+  }
+
+  h1 {
+    font-size: 24px;
+    margin-bottom: 24px;
+  }
+
+  .user-info {
+    padding: 24px 20px;
+    margin-bottom: 24px;
+  }
+
+  .user-info p {
+    font-size: 14px;
+    margin-bottom: 14px;
+  }
+
+  .actions {
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 20px;
+  }
+
+  .actions button {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .page {
+    padding: 24px 12px 40px;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  .user-info {
+    padding: 20px 16px;
+  }
+
+  .user-info p {
+    font-size: 13px;
+  }
 }
 </style>
