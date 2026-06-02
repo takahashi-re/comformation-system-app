@@ -31,6 +31,15 @@
       </div>
     </header>
 
+    <div v-if="hasStaleAlert" class="stale-alert" role="alert">
+      <div class="stale-alert-text">
+        更新から{{ staleDays }}日以上経過した対応対象が{{ staleAlertCount }}件あります。
+      </div>
+      <button type="button" class="stale-alert-btn" @click="goToStaleRelevantList">
+        確認する
+      </button>
+    </div>
+
     <div class="status-grid">
       <button
         v-for="card in statusCards"
@@ -64,7 +73,11 @@
 
       <article class="metric-card">
         <h2>差戻し理由メトリクス</h2>
-        <div v-for="item in reasonMetrics" :key="item.label" class="metric-row">
+        <div
+          v-for="item in displayedReasonMetrics"
+          :key="item.label"
+          class="metric-row"
+        >
           <div class="row-head">
             <span>{{ item.label }}</span>
             <span>{{ item.count }}件</span>
@@ -77,6 +90,14 @@
             ></div>
           </div>
         </div>
+        <button
+          v-if="hasMoreReasonMetrics"
+          type="button"
+          class="show-all-reasons"
+          @click="showAllReasonMetrics = true"
+        >
+          すべて見る
+        </button>
       </article>
     </div>
   </section>
@@ -87,11 +108,10 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useLoginStore } from "../../store/login.Store";
 import { fetchScoutDetail, fetchScouts } from "../../api/scoutApi";
+import { fetchMyGenres } from "../../api/genreApi";
+import { SCOUT_STATUS_LABEL } from "../../shared/scoutStatus";
 import type { ScoutEntity } from "../../type/scout";
-import {
-  RETURN_REASON_METRIC_ITEMS,
-  type ReturnReasonMetricKey,
-} from "../../shared/scoutStatus";
+import type { GenreItem } from "../../api/genreApi";
 
 type Scope = "mine" | "all";
 
@@ -101,6 +121,7 @@ type DashboardScout = ScoutEntity & {
   body: string;
   status: string;
   createdAt?: string;
+  updatedAt?: string;
 };
 
 const router = useRouter();
@@ -109,6 +130,10 @@ const loginStore = useLoginStore();
 const scope = ref<Scope>("all");
 const scouts = ref<DashboardScout[]>([]);
 const rejectCommentsById = ref<Record<string, string>>({});
+const returnGenres = ref<GenreItem[]>([]);
+const showAllReasonMetrics = ref(false);
+
+const staleDays = 3;
 
 const positionId = computed(() => loginStore.user?.position_id ?? 0);
 const positionName = computed(() => {
@@ -123,6 +148,18 @@ const effectiveScope = computed<Scope>(() =>
   isSales.value ? scope.value : "all",
 );
 const title = computed(() => `${positionName.value}ダッシュボード`);
+
+const staleTargetStatusesByRole: Record<number, string[]> = {
+  1: [
+    "DRAFT",
+    "PENDING_APPROVER",
+    "PENDING_ADMIN",
+    "REJECTED_BY_APPROVER",
+    "REJECTED_BY_ADMIN",
+  ],
+  2: ["PENDING_APPROVER", "REJECTED_BY_ADMIN"],
+  3: ["PENDING_ADMIN", "REJECTED_BY_APPROVER"],
+};
 
 const statusCardDefinition = [
   { key: "DRAFT", label: "下書き", filterLabel: "下書き", color: "gray" },
@@ -175,6 +212,47 @@ const scopedScouts = computed<DashboardScout[]>(() => {
   );
 });
 
+const roleRelatedScouts = computed<DashboardScout[]>(() => {
+  const statuses = staleTargetStatusesByRole[positionId.value] ?? [];
+  const myEmployeeId = loginStore.user?.employee_id ?? "";
+
+  return scouts.value.filter((scout: DashboardScout) => {
+    const normalizedStatus = normalizeStatus(scout.status);
+    if (!statuses.includes(normalizedStatus)) {
+      return false;
+    }
+
+    if (positionId.value === 1) {
+      return scout.creator === myEmployeeId;
+    }
+
+    return true;
+  });
+});
+
+const isScoutOlderThanDays = (scout: DashboardScout, days: number): boolean => {
+  const base = scout.updatedAt ?? scout.createdAt;
+  if (!base) {
+    return false;
+  }
+  const ts = new Date(base).getTime();
+  if (!Number.isFinite(ts)) {
+    return false;
+  }
+
+  const threshold = Date.now() - days * 24 * 60 * 60 * 1000;
+  return ts < threshold;
+};
+
+const staleRelevantScouts = computed(() =>
+  roleRelatedScouts.value.filter((scout: DashboardScout) =>
+    isScoutOlderThanDays(scout, staleDays),
+  ),
+);
+
+const staleAlertCount = computed(() => staleRelevantScouts.value.length);
+const hasStaleAlert = computed(() => staleAlertCount.value > 0);
+
 const statusCounts = computed(() => {
   const initial = {
     DRAFT: 0,
@@ -198,10 +276,11 @@ const statusCounts = computed(() => {
 const countOlderThan = (days: number): number => {
   const threshold = Date.now() - days * 24 * 60 * 60 * 1000;
   return scopedScouts.value.filter((scout: DashboardScout) => {
-    if (!scout.createdAt) {
+    const base = scout.updatedAt ?? scout.createdAt;
+    if (!base) {
       return false;
     }
-    const ts = new Date(scout.createdAt).getTime();
+    const ts = new Date(base).getTime();
     return Number.isFinite(ts) && ts < threshold;
   }).length;
 };
@@ -241,49 +320,45 @@ const stallMetrics = computed(() => [
   { label: "長期未更新", count: countOlderThan(14) },
 ]);
 
-const reasonPatternMap: Record<ReturnReasonMetricKey, RegExp[]> = {
-  WEAK_APPEAL: [/魅力/, /訴求/, /弱い/],
-  SALARY_EXPRESSION: [/給与/, /年収/, /報酬/],
-  TOO_LONG: [/長すぎ/, /冗長/, /長い/],
-  TYPO_GRAMMAR: [/誤字/, /文法/, /表記ゆれ/],
-  EXPRESSION: [/表現/],
-};
+const allReasonMetrics = computed(() => {
+  const rows = returnGenres.value
+    .map((genre: GenreItem) => ({
+      key: String(genre.genre_id),
+      label: String(genre.genre_name ?? "").trim(),
+    }))
+    .filter((item: { key: string; label: string }) => item.label);
 
-const reasonCounts = computed<Record<ReturnReasonMetricKey, number>>(() => {
-  const counts: Record<ReturnReasonMetricKey, number> = {
-    WEAK_APPEAL: 0,
-    SALARY_EXPRESSION: 0,
-    TOO_LONG: 0,
-    TYPO_GRAMMAR: 0,
-    EXPRESSION: 0,
-  };
+  return rows
+    .map((item: { key: string; label: string }, index: number) => {
+      const count = scopedScouts.value.reduce((acc: number, scout: DashboardScout) => {
+        const comment = String(rejectCommentsById.value[scout.id] ?? "");
+        if (!comment) {
+          return acc;
+        }
+        return comment.includes(item.label) ? acc + 1 : acc;
+      }, 0);
 
-  for (const scout of scopedScouts.value) {
-    const comment = rejectCommentsById.value[scout.id] ?? "";
-    if (!comment) {
-      continue;
-    }
-
-    for (const key of Object.keys(
-      reasonPatternMap,
-    ) as ReturnReasonMetricKey[]) {
-      if (reasonPatternMap[key].some((pattern) => pattern.test(comment))) {
-        counts[key] += 1;
+      return {
+        ...item,
+        count,
+        colorClass: reasonBarColors[index % reasonBarColors.length],
+      };
+    })
+    .sort((a: { count: number; label: string }, b: { count: number; label: string }) => {
+      if (b.count !== a.count) {
+        return b.count - a.count;
       }
-    }
-  }
-
-  return counts;
+      return a.label.localeCompare(b.label, "ja");
+    });
 });
 
-const reasonMetrics = computed(() => {
-  const reasonCountMap = reasonCounts.value;
-  return RETURN_REASON_METRIC_ITEMS.map((item, index) => ({
-    ...item,
-    count: reasonCountMap[item.key],
-    colorClass: reasonBarColors[index % reasonBarColors.length],
-  }));
-});
+const displayedReasonMetrics = computed(() =>
+  showAllReasonMetrics.value ? allReasonMetrics.value : allReasonMetrics.value.slice(0, 5),
+);
+
+const hasMoreReasonMetrics = computed(
+  () => allReasonMetrics.value.length > 5 && !showAllReasonMetrics.value,
+);
 
 const maxStallCount = computed(() =>
   Math.max(
@@ -294,7 +369,7 @@ const maxStallCount = computed(() =>
 const maxReasonCount = computed(() =>
   Math.max(
     1,
-    ...reasonMetrics.value.map((item: { count: number }) => item.count),
+    ...displayedReasonMetrics.value.map((item: { count: number }) => item.count),
   ),
 );
 
@@ -308,6 +383,34 @@ const goToScoutList = (statusLabel?: string): void => {
   };
   if (statusLabel) {
     query.statuses = statusLabel;
+  }
+
+  router.push({
+    name: "scout-list",
+    query,
+  });
+};
+
+const goToStaleRelevantList = (): void => {
+  const statusLabels = Array.from(
+    new Set(
+      staleRelevantScouts.value
+        .map((scout: DashboardScout) => normalizeStatus(scout.status))
+        .map(
+          (status: string) =>
+            SCOUT_STATUS_LABEL[status as keyof typeof SCOUT_STATUS_LABEL],
+        )
+        .filter(Boolean),
+    ),
+  );
+
+  const query: Record<string, string> = {
+    scope: positionId.value === 1 ? "mine" : "all",
+    updatedDays: String(staleDays),
+  };
+
+  if (statusLabels.length) {
+    query.statuses = statusLabels.join(",");
   }
 
   router.push({
@@ -331,6 +434,12 @@ const loadScouts = async (): Promise<void> => {
           : row.createdAt
             ? String(row.createdAt)
             : undefined,
+      updatedAt:
+        typeof row.updatedAt === "string"
+          ? row.updatedAt
+          : row.updatedAt
+            ? String(row.updatedAt)
+            : undefined,
       title: String(row.title ?? ""),
     }));
 };
@@ -352,7 +461,7 @@ const loadRejectComments = async (): Promise<void> => {
   const fetched = await Promise.all(
     rejectIds.map(async (id: string) => {
       try {
-        const detail = await fetchScoutDetail(id);
+        const detail = await fetchScoutDetail(Number(id));
         return { id, comment: detail.latestRejectComment ?? "" };
       } catch {
         return { id, comment: "" };
@@ -367,12 +476,22 @@ const loadRejectComments = async (): Promise<void> => {
   rejectCommentsById.value = nextMap;
 };
 
+const loadReturnGenres = async (): Promise<void> => {
+  try {
+    returnGenres.value = await fetchMyGenres();
+  } catch {
+    returnGenres.value = [];
+  }
+};
+
 onMounted(async () => {
   await loadScouts();
+  await loadReturnGenres();
   await loadRejectComments();
 });
 
 watch(effectiveScope, async () => {
+  showAllReasonMetrics.value = false;
   await loadRejectComments();
 });
 </script>
@@ -384,6 +503,39 @@ watch(effectiveScope, async () => {
   padding: 48px 24px 64px;
   display: grid;
   gap: 32px;
+}
+
+.stale-alert {
+  border: 1px solid #f59e0b;
+  background: #fffbeb;
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stale-alert-text {
+  color: #92400e;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.stale-alert-btn {
+  border: 1px solid #b45309;
+  background: #b45309;
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.stale-alert-btn:hover {
+  background: #92400e;
+  border-color: #92400e;
 }
 
 .title-bar {
@@ -648,6 +800,22 @@ watch(effectiveScope, async () => {
   background: #10b981;
 }
 
+.show-all-reasons {
+  margin-top: 12px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.show-all-reasons:hover {
+  background: #f9fafb;
+}
+
 @media (max-width: 1200px) {
   .status-grid {
     grid-template-columns: repeat(3, minmax(140px, 1fr));
@@ -662,6 +830,15 @@ watch(effectiveScope, async () => {
   .dashboard {
     padding: 32px 16px 48px;
     gap: 24px;
+  }
+
+  .stale-alert {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .stale-alert-btn {
+    width: 100%;
   }
 
   .title-bar {

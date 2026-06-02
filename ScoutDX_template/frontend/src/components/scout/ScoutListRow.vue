@@ -15,7 +15,7 @@
       </button>
 
       <button
-        v-if="role === 'approver' && scout.status === 'PENDING_APPROVER'"
+        v-if="role === 'approver' && ['PENDING_APPROVER', 'REJECTED_BY_ADMIN'].includes(scout.status)"
         @click="$emit('review', scout.id)"
       >
         承認・差戻し
@@ -66,6 +66,18 @@ export default {
       if (this.selectedColumns.includes("status")) {
         parts.push(`ステータス：${this.scout.statusLabel}`);
       }
+      if (this.selectedColumns.includes("reviewer")) {
+        parts.push(`最新承認/差戻し者：${this.scout.reviewerName || "-"}`);
+      }
+      if (this.selectedColumns.includes("age")) {
+        parts.push(`年齢：${this.formatAge(this.scout.job_seeker_age)}`);
+      }
+      if (this.selectedColumns.includes("gender")) {
+        parts.push(`性別：${this.toGenderLabel(this.scout.job_seeker_gender)}`);
+      }
+      if (this.selectedColumns.includes("updatedAt")) {
+        parts.push(`最終更新日：${this.formatDate(this.scout.updatedAt)}`);
+      }
 
       return parts.join("、");
     },
@@ -73,6 +85,28 @@ export default {
   methods: {
     isEditable(status) {
       return ["下書き", "承認者差戻し", "管理者差戻し"].includes(status);
+    },
+    toGenderLabel(gender) {
+      const normalized = String(gender ?? "").trim().toLowerCase();
+      if (["male", "m", "男性"].includes(normalized)) return "男性";
+      if (["female", "f", "女性"].includes(normalized)) return "女性";
+      if (["other", "others", "non-binary", "その他"].includes(normalized)) {
+        return "その他";
+      }
+      return "不明";
+    },
+    formatAge(age) {
+      const n = Number(age);
+      if (!Number.isFinite(n) || n <= 0) return "-";
+      return `${n}歳`;
+    },
+    formatDate(value) {
+      const date = new Date(value);
+      if (!date || Number.isNaN(date.getTime())) return "-";
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
+      return `${y}/${m}/${d}`;
     },
   },
 };
