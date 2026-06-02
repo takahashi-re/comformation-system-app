@@ -491,8 +491,8 @@ export default {
     },
 
     goConditions() {
-    if (this.role !== "admin" && this.role !== "approver") return;
-    this.$router.push({ name: "conditions" });
+      if (this.role !== "admin") return;
+      this.$router.push({ name: "conditions" });
     },
 
     selectAll() {
