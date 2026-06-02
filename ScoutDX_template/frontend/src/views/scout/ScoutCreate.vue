@@ -222,7 +222,7 @@
 
           <!-- 人物像（AI指示） -->
           <div class="form-group">
-            <label for="aiInstructions" class="form-label">人物像</label>
+            <label for="aiInstructions" class="form-label">AI指示</label>
             <textarea
               id="aiInstructions"
               v-model="applicantInfo.aiInstructions"
@@ -230,7 +230,7 @@
               :class="{ 'is-error': errors.aiInstructions }"
               maxlength="2000"
               rows="4"
-              placeholder="求職者の人物像を入力"
+              placeholder="AIへの追加指示があれば入力してください"
             />
             <span v-if="errors.aiInstructions" class="error-message">
               {{ errors.aiInstructions }}

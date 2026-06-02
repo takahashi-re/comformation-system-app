@@ -5,7 +5,6 @@ export interface JobSeekerRow {
   job_seeker_id: number;
   age: number;
   gender: string;
-  desired_position: string | null;
   created_at: string | null;
   updated_at: string | null;
 }
@@ -13,7 +12,6 @@ export interface JobSeekerRow {
 export interface CreateJobSeekerInput {
   age: number;
   gender: string;
-  desired_position?: string | null;
 }
 
 @Injectable()
@@ -38,20 +36,18 @@ export class JobSeekerRepository {
         INSERT INTO JOB_SEEKERS (
           age,
           gender,
-          desired_position,
           created_at,
           updated_at
         )
-        VALUES ($1, $2, $3, NOW(), NOW())
+        VALUES ($1, $2, NOW(), NOW())
         RETURNING
           job_seeker_id,
           age,
           gender,
-          desired_position,
           created_at,
           updated_at
       `,
-      [input.age, input.gender, input.desired_position ?? null],
+      [input.age, input.gender],
     );
 
     return rows[0];
@@ -64,7 +60,6 @@ export class JobSeekerRepository {
           job_seeker_id,
           age,
           gender,
-          desired_position,
           created_at,
           updated_at
         FROM JOB_SEEKERS

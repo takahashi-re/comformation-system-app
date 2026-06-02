@@ -4,6 +4,9 @@
       <div class="title">
         スカウト文一覧（表示件数: {{ filteredScouts.length }}件）
       </div>
+      <div class="footer" v-if="role === 'sales'">
+        <button class="create-btn" @click="goCreate">新規作成</button>
+      </div>
 
       <table class="table">
         <thead>
@@ -28,10 +31,6 @@
           />
         </tbody>
       </table>
-
-      <div class="footer" v-if="role === 'sales'">
-        <button class="create-btn" @click="goCreate">新規作成</button>
-      </div>
     </div>
 
     <div class="sidebar">
@@ -359,7 +358,7 @@ export default {
           id: row.id,
           creator: row.creator || "",
           company: row.company_name || "-",
-          job: row.job_title || "-",
+          job: row.job_types || "-",
           status: row.status,
           statusLabel: STATUS_MAP[row.status] || "-",
           job_seeker_age: row.job_seeker_age ?? null,
