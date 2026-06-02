@@ -8,7 +8,7 @@ export interface ScoutEntity {
   body: string
   status?: string
   company_name?: string
-  job_types?: string
+  job_title?: string
   job_seeker_age?: number | null
   job_seeker_gender?: string | null
   updated_by_name?: string

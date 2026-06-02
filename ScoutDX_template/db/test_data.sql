@@ -97,6 +97,7 @@ ON CONFLICT (employee_id) DO NOTHING;
 INSERT INTO JOB_POSTINGS (
   job_posting_id,
   company_name,
+  job_title,
   job_description,
   min_salary,
   max_salary,
@@ -107,6 +108,7 @@ INSERT INTO JOB_POSTINGS (
   (
     1,
     'Acme Tech',
+    'Backend Engineer (Go)',
     'Develop APIs and internal tools for B2B products.',
     5000000,
     8000000,
@@ -117,6 +119,7 @@ INSERT INTO JOB_POSTINGS (
   (
     2,
     'Blue Ocean Inc.',
+    'Frontend Engineer (Vue)',
     'Build and maintain customer-facing web applications.',
     4500000,
     7000000,
@@ -129,6 +132,7 @@ ON CONFLICT (job_posting_id) DO NOTHING;
 INSERT INTO JOB_POSTINGS (
   job_posting_id,
   company_name,
+  job_title,
   job_description,
   min_salary,
   max_salary,
@@ -139,6 +143,7 @@ INSERT INTO JOB_POSTINGS (
   (
     3,
     'North Wind Systems',
+    'DevOps Engineer (AWS)',
     'Improve CI/CD pipelines and cloud infrastructure reliability.',
     5500000,
     8500000,
@@ -149,6 +154,7 @@ INSERT INTO JOB_POSTINGS (
   (
     4,
     'Insight Works',
+    'Data Analyst',
     'Analyze product and marketing data, design KPI dashboards, and improve decision making.',
     4800000,
     7200000,
@@ -166,12 +172,12 @@ INSERT INTO JOB_POSTING_JOB_TYPES (job_posting_id, job_type_id) VALUES
   (4, 4)
 ON CONFLICT (job_posting_id, job_type_id) DO NOTHING;
 
-INSERT INTO JOB_SEEKERS (job_seeker_id, age, gender, created_at, updated_at) VALUES
-  (1, 28, 'male', NOW(), NOW()),
-  (2, 31, 'female', NOW(), NOW()),
-  (3, 26, 'other', NOW(), NOW()),
-  (4, 34, 'male', NOW(), NOW()),
-  (5, 29, 'female', NOW(), NOW())
+INSERT INTO JOB_SEEKERS (job_seeker_id, age, gender, desired_position, created_at, updated_at) VALUES
+  (1, 28, 'male', 'Backend Engineer', NOW(), NOW()),
+  (2, 31, 'female', 'Frontend Engineer', NOW(), NOW()),
+  (3, 26, 'other', 'Data Analyst', NOW(), NOW()),
+  (4, 34, 'male', 'DevOps Engineer', NOW(), NOW()),
+  (5, 29, 'female', 'Data Analyst', NOW(), NOW())
 ON CONFLICT (job_seeker_id) DO NOTHING;
 
 INSERT INTO JOB_SEEKER_JOB_TYPES (job_seeker_id, job_type_id) VALUES
@@ -368,6 +374,7 @@ ON CONFLICT (employee_id) DO NOTHING;
 INSERT INTO JOB_POSTINGS (
   job_posting_id,
   company_name,
+  job_title,
   job_description,
   min_salary,
   max_salary,
@@ -378,6 +385,7 @@ INSERT INTO JOB_POSTINGS (
   (
     10,
     'Cedar Labs',
+    'Platform Engineer',
     'Build internal platforms and improve service reliability.',
     6200000,
     9000000,
@@ -388,6 +396,7 @@ INSERT INTO JOB_POSTINGS (
   (
     11,
     'Orbit Commerce',
+    'Frontend Engineer (Vue + TS)',
     'Develop customer-facing storefront and internal CMS.',
     5000000,
     7600000,
@@ -398,6 +407,7 @@ INSERT INTO JOB_POSTINGS (
   (
     12,
     'River Analytics',
+    'Data Engineer',
     'Design and operate data pipelines for analytics and ML.',
     5800000,
     8200000,
@@ -408,6 +418,7 @@ INSERT INTO JOB_POSTINGS (
   (
     13,
     'Lighthouse Security',
+    'Security Engineer',
     'Lead secure SDLC and cloud security improvements.',
     6500000,
     9800000,
@@ -425,13 +436,13 @@ INSERT INTO JOB_POSTING_JOB_TYPES (job_posting_id, job_type_id) VALUES
   (13, 3)
 ON CONFLICT (job_posting_id, job_type_id) DO NOTHING;
 
-INSERT INTO JOB_SEEKERS (job_seeker_id, age, gender, created_at, updated_at) VALUES
-  (10, 24, 'female', NOW() - INTERVAL '60 days', NOW() - INTERVAL '5 days'),
-  (11, 27, 'male', NOW() - INTERVAL '75 days', NOW() - INTERVAL '6 days'),
-  (12, 33, 'female', NOW() - INTERVAL '55 days', NOW() - INTERVAL '4 days'),
-  (13, 38, 'male', NOW() - INTERVAL '85 days', NOW() - INTERVAL '9 days'),
-  (14, 29, 'other', NOW() - INTERVAL '65 days', NOW() - INTERVAL '2 days'),
-  (15, 41, 'female', NOW() - INTERVAL '90 days', NOW() - INTERVAL '10 days')
+INSERT INTO JOB_SEEKERS (job_seeker_id, age, gender, desired_position, created_at, updated_at) VALUES
+  (10, 24, 'female', 'Frontend Engineer', NOW() - INTERVAL '60 days', NOW() - INTERVAL '5 days'),
+  (11, 27, 'male', 'Platform Engineer', NOW() - INTERVAL '75 days', NOW() - INTERVAL '6 days'),
+  (12, 33, 'female', 'Data Engineer', NOW() - INTERVAL '55 days', NOW() - INTERVAL '4 days'),
+  (13, 38, 'male', 'Security Engineer', NOW() - INTERVAL '85 days', NOW() - INTERVAL '9 days'),
+  (14, 29, 'other', 'Backend Engineer', NOW() - INTERVAL '65 days', NOW() - INTERVAL '2 days'),
+  (15, 41, 'female', 'DevOps Engineer', NOW() - INTERVAL '90 days', NOW() - INTERVAL '10 days')
 ON CONFLICT (job_seeker_id) DO NOTHING;
 
 INSERT INTO JOB_SEEKER_JOB_TYPES (job_seeker_id, job_type_id) VALUES

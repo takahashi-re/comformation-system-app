@@ -122,8 +122,9 @@ export class AiGenerateService {
             "何卒ご検討のほどよろしくお願い申し上げます。",
           ].join("\n");
 
-    const jobPosting = await this.jobPostingRepository.create({
+    const jobPosting = await this.jobPostingRepository.createOrFindByTitle({
       company_name: input.jobInfo.companyName.trim(),
+      job_title: input.jobInfo.jobTitle.trim(),
       job_description: input.jobInfo.businessContent.trim(),
       min_salary: input.jobInfo.minSalary,
       max_salary: input.jobInfo.maxSalary,
@@ -135,6 +136,7 @@ export class AiGenerateService {
     const jobSeeker = await this.jobSeekerRepository.create({
       gender: input.applicantInfo.gender.trim(),
       age: input.applicantInfo.age,
+      desired_position: input.applicantInfo.desiredJobTitle?.trim() || null,
     });
 
     const scoutMessage = await this.scoutMessageRepository.create({
@@ -152,14 +154,11 @@ export class AiGenerateService {
       typeNames,
     );
 
-    // Job Seeker の希望職種も同様にリンク
-    if (input.applicantInfo.desiredJobTitle?.trim()) {
-      const seekerTypeNames = [input.applicantInfo.desiredJobTitle.trim()];
-      await this.jobTypeRepository.linkMultipleToJobSeeker(
-        Number(jobSeeker.job_seeker_id),
-        seekerTypeNames,
-      );
-    }
+    // jobPosting を作成した直後に追加
+    await this.jobPostingRepository.linkJobPostingToTitle(
+      Number(jobPosting.job_posting_id),
+      input.jobInfo.jobTitle.trim(),
+    );
 
     return { body, scoutId: String(scoutMessage.scout_message_id) };
   }

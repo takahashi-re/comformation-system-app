@@ -16,9 +16,10 @@ export interface ScoutMessageRow {
 
 export interface ScoutMessageWithRelationsRow extends ScoutMessageRow {
   company_name: string | null;
-  job_types: string | null;
+  job_title: string | null;
   job_seeker_age: number | null;
   job_seeker_gender: string | null;
+  desired_position: string | null;
   updated_by_name: string | null;
   returned_by_name: string | null;
   reviewer_name: string | null;
@@ -74,13 +75,10 @@ export class ScoutMessageRepository {
           COALESCE(sm.message_content, '') AS body,
           COALESCE(sm.status, 'DRAFT') AS status,
           COALESCE(jp.company_name, '') AS company_name,
-          COALESCE(STRING_AGG(DISTINCT jt.job_type_name, ', '), '') AS job_types
+          COALESCE(jp.job_title, '') AS job_title
         FROM SCOUT_MESSAGES sm
         LEFT JOIN JOB_POSTINGS jp ON jp.job_posting_id = sm.job_posting_id
-        LEFT JOIN JOB_POSTING_JOB_TYPES jpjt ON jpjt.job_posting_id = jp.job_posting_id
-        LEFT JOIN JOB_TYPES jt ON jt.job_type_id = jpjt.job_type_id
-        GROUP BY sm.scout_message_id, sm.created_at, sm.created_by_employee_id, sm.message_content, sm.status, jp.company_name
-        ORDER BY sm.updated_at DESC NULLS LAST, sm.scout_message_id DESC
+        ORDER BY sm.created_at DESC NULLS LAST, sm.scout_message_id DESC
       `,
     );
   }
@@ -127,9 +125,9 @@ export class ScoutMessageRepository {
           sm.job_posting_id,
           js.age AS candidate_age,
           COALESCE(js.gender, '') AS candidate_gender,
-          COALESCE(STRING_AGG(DISTINCT sjt.job_type_name, ', '), '') AS candidate_desired_job_types,
+          COALESCE(js.desired_position, '') AS candidate_desired_position,
           COALESCE(jp.company_name, '') AS company_name,
-          COALESCE(STRING_AGG(DISTINCT jt.job_type_name, ', '), '') AS job_types,
+          COALESCE(jp.job_title, '') AS job_title,
           COALESCE(jp.job_description, '') AS job_description,
           jp.min_salary,
           jp.max_salary,
@@ -145,12 +143,8 @@ export class ScoutMessageRepository {
           ON creator_emp.employee_id = sm.created_by_employee_id
         LEFT JOIN JOB_SEEKERS js
           ON js.job_seeker_id = sm.job_seeker_id
-        LEFT JOIN JOB_SEEKER_JOB_TYPES sjt_link ON sjt_link.job_seeker_id = js.job_seeker_id
-        LEFT JOIN JOB_TYPES sjt ON sjt.job_type_id = sjt_link.job_type_id
         LEFT JOIN JOB_POSTINGS jp
           ON jp.job_posting_id = sm.job_posting_id
-        LEFT JOIN JOB_POSTING_JOB_TYPES jpjt ON jpjt.job_posting_id = jp.job_posting_id
-        LEFT JOIN JOB_TYPES jt ON jt.job_type_id = jpjt.job_type_id
         LEFT JOIN EMPLOYEES updated_emp
           ON updated_emp.employee_id = sm.updated_by_employee_id
         LEFT JOIN LATERAL (
@@ -165,7 +159,6 @@ export class ScoutMessageRepository {
         LEFT JOIN EMPLOYEES returned_emp
           ON returned_emp.employee_id = latest_history.returned_by_employee_id
         WHERE sm.scout_message_id = $1
-        GROUP BY sm.scout_message_id, sm.created_at, sm.created_by_employee_id, sm.message_content, sm.status, sm.job_posting_id, js.age, js.gender, jp.company_name, jp.job_posting_id, jp.job_description, jp.min_salary, jp.max_salary, jp.required_skills, jp.job_appeal, jp.work_location, creator_emp.name, updated_emp.name, returned_emp.name, latest_history.returned_by_employee_id, latest_history.return_comment
         LIMIT 1
       `,
       [Number(id)],
@@ -202,7 +195,7 @@ export class ScoutMessageRepository {
           COALESCE(sm.message_content, '') AS scout_body,
           sm.job_posting_id,
           COALESCE(jp.company_name, '') AS company_name,
-          COALESCE(STRING_AGG(DISTINCT jt.job_type_name, ', '), '') AS job_types,
+          COALESCE(jp.job_title, '') AS job_title,
           COALESCE(jp.job_description, '') AS job_description,
           jp.min_salary,
           jp.max_salary,
@@ -211,10 +204,7 @@ export class ScoutMessageRepository {
           COALESCE(jp.work_location, '') AS work_location
         FROM SCOUT_MESSAGES sm
         LEFT JOIN JOB_POSTINGS jp ON jp.job_posting_id = sm.job_posting_id
-        LEFT JOIN JOB_POSTING_JOB_TYPES jpjt ON jpjt.job_posting_id = jp.job_posting_id
-        LEFT JOIN JOB_TYPES jt ON jt.job_type_id = jpjt.job_type_id
         WHERE sm.scout_message_id = $1
-        GROUP BY sm.scout_message_id, jp.job_posting_id, jp.company_name, jp.job_posting_id, jp.job_description, jp.min_salary, jp.max_salary, jp.required_skills, jp.job_appeal, jp.work_location, sm.message_content
         LIMIT 1
       `,
       [Number(id)],
@@ -246,7 +236,7 @@ export class ScoutMessageRepository {
       jobInfo: {
         jobPostingId: scoutRow.job_posting_id,
         companyName: scoutRow.company_name,
-        jobTitle: scoutRow.job_types,
+        jobTitle: scoutRow.job_title,
         jobDescription: scoutRow.job_description,
         minSalary: scoutRow.min_salary,
         maxSalary: scoutRow.max_salary,
@@ -369,16 +359,15 @@ export class ScoutMessageRepository {
           sm.created_at,
           sm.updated_at,
           jp.company_name,
-          COALESCE(STRING_AGG(DISTINCT jt.job_type_name, ', '), '') AS job_types,
+          jp.job_title,
           js.age AS job_seeker_age,
           js.gender AS job_seeker_gender,
+          js.desired_position,
           COALESCE(updated_emp.name, '') AS updated_by_name,
           COALESCE(returned_emp.name, '') AS returned_by_name,
           COALESCE(returned_emp.name, updated_emp.name, '') AS reviewer_name
         FROM SCOUT_MESSAGES sm
         LEFT JOIN JOB_POSTINGS jp ON jp.job_posting_id = sm.job_posting_id
-        LEFT JOIN JOB_POSTING_JOB_TYPES jpjt ON jpjt.job_posting_id = jp.job_posting_id
-        LEFT JOIN JOB_TYPES jt ON jt.job_type_id = jpjt.job_type_id
         LEFT JOIN JOB_SEEKERS js ON js.job_seeker_id = sm.job_seeker_id
         LEFT JOIN EMPLOYEES updated_emp
           ON updated_emp.employee_id = sm.updated_by_employee_id
@@ -394,7 +383,6 @@ export class ScoutMessageRepository {
           ON returned_emp.employee_id = latest_history.returned_by_employee_id
         WHERE sm.status IS NOT NULL
           AND ($1::boolean = false OR sm.scout_message_id = $2)
-        GROUP BY sm.scout_message_id, sm.message_content, sm.sent_at, sm.job_posting_id, sm.job_seeker_id, sm.created_by_employee_id, sm.updated_by_employee_id, sm.status, sm.created_at, sm.updated_at, jp.company_name, js.age, js.gender, updated_emp.name, returned_emp.name, latest_history.returned_by_employee_id
         ORDER BY sm.created_at DESC NULLS LAST, sm.scout_message_id DESC
       `,
       [hasIdFilter, scoutMessageId ?? null],
@@ -430,8 +418,6 @@ export class ScoutMessageRepository {
     if (!input.job_posting_id || !input.job_seeker_id) {
       throw new Error("job_posting_id と job_seeker_id は必須です");
     }
-
-    await this.syncPrimaryKeySequence();
 
     const rows = await this.dataSource.query(
       `
@@ -521,16 +507,14 @@ export class ScoutMessageRepository {
           sm.created_at,
           sm.updated_at,
           jp.company_name,
-          COALESCE(STRING_AGG(DISTINCT jt.job_type_name, ', '), '') AS job_types,
+          jp.job_title,
           js.age AS job_seeker_age,
-          js.gender AS job_seeker_gender
+          js.gender AS job_seeker_gender,
+          js.desired_position
         FROM SCOUT_MESSAGES sm
         LEFT JOIN JOB_POSTINGS jp ON jp.job_posting_id = sm.job_posting_id
-        LEFT JOIN JOB_POSTING_JOB_TYPES jpjt ON jpjt.job_posting_id = jp.job_posting_id
-        LEFT JOIN JOB_TYPES jt ON jt.job_type_id = jpjt.job_type_id
         LEFT JOIN JOB_SEEKERS js ON js.job_seeker_id = sm.job_seeker_id
         WHERE sm.scout_message_id = $1
-        GROUP BY sm.scout_message_id, sm.message_content, sm.sent_at, sm.job_posting_id, sm.job_seeker_id, sm.created_by_employee_id, sm.updated_by_employee_id, sm.status, sm.created_at, sm.updated_at, jp.company_name, js.age, js.gender
         LIMIT 1
       `,
       [scoutMessageId],
