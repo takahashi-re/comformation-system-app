@@ -13,7 +13,7 @@
 			<button type="button" :disabled="isResetting || isLoading" @click="handleResetPassword">
 				{{ isResetting ? 'リセット中...' : 'パスワードリセット' }}
 			</button>
-      <button type="button" class="danger" :disabled="isDeleting || isLoading || user?.userId === currentUserId" @click="handleDelete">
+			<button type="button" class="danger" :disabled="isDeleting || isLoading" @click="handleDelete">
 				{{ isDeleting ? '削除中...' : '削除' }}
 			</button>
 			<button type="button" @click="goBack">一覧へ戻る</button>
@@ -25,7 +25,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { deleteUserById, fetchUserById, resetUserPassword } from '../../api/userApi'
-import { apiClient } from '../../api/client'
 import type { User, UserRole } from '../../type/user'
 
 const route = useRoute()
@@ -37,7 +36,6 @@ const isLoading = ref(false)
 const isDeleting = ref(false)
 const isResetting = ref(false)
 const errorMessage = ref('')
-const currentUserId = ref('')
 
 const roleLabels: Record<UserRole, string> = {
 	admin: '管理者',
@@ -64,20 +62,14 @@ const roleLabel = computed(() => {
 const loadUser = async (): Promise<void> => {
 	isLoading.value = true
 	errorMessage.value = ''
-  try {
-    user.value = await fetchUserById(userId.value)
-    try {
-      const { data } = await apiClient.get('/api/login/me')
-      currentUserId.value = String((data as any)?.employee_id ?? '')
-    } catch (e) {
-      currentUserId.value = ''
-    }
-  } catch (error) {
-    console.error('ユーザー詳細取得エラー:', error)
-    errorMessage.value = 'ユーザー情報の取得に失敗しました'
-  } finally {
-    isLoading.value = false
-  }
+	try {
+		user.value = await fetchUserById(userId.value)
+	} catch (error) {
+		console.error('ユーザー詳細取得エラー:', error)
+		errorMessage.value = 'ユーザー情報の取得に失敗しました'
+	} finally {
+		isLoading.value = false
+	}
 }
 
 const goEdit = (): void => {
