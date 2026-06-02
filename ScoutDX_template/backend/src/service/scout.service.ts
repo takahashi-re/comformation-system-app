@@ -202,7 +202,7 @@ export class ScoutService {
       body: row.message_content ?? "",
       status: row.status ?? "",
       company_name: row.company_name ?? "",
-      job_types: row.job_types ?? "",
+      job_title: row.job_title ?? "",
       job_seeker_age: row.job_seeker_age ?? undefined,
       job_seeker_gender: row.job_seeker_gender ?? undefined,
       updated_by_name: row.updated_by_name ?? "",
