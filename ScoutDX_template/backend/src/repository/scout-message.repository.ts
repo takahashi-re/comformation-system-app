@@ -132,8 +132,10 @@ export class ScoutMessageRepository {
           COALESCE(jp.job_appeal, '') AS job_appeal,
           COALESCE(jp.work_location, '') AS work_location,
           COALESCE(latest_history.return_comment, '') AS latest_reject_comment,
+          COALESCE(latest_history.returned_by_employee_id, '') AS returned_by_employee_id,
           COALESCE(updated_emp.name, '') AS updated_by_name,
           COALESCE(returned_emp.name, '') AS returned_by_name,
+          COALESCE(returned_pos.position_name, '') AS returned_by_position_name,
           COALESCE(returned_emp.name, updated_emp.name, '') AS reviewer_name
         FROM SCOUT_MESSAGES sm
         LEFT JOIN EMPLOYEES creator_emp
@@ -155,6 +157,8 @@ export class ScoutMessageRepository {
         ) latest_history ON TRUE
         LEFT JOIN EMPLOYEES returned_emp
           ON returned_emp.employee_id = latest_history.returned_by_employee_id
+        LEFT JOIN POSITIONS returned_pos
+          ON returned_pos.position_id = returned_emp.position_id
         WHERE sm.scout_message_id = $1
         LIMIT 1
       `,
