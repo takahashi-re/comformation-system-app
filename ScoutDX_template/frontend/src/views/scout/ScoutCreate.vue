@@ -272,6 +272,7 @@
 import { ref, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { apiClient } from "../../api/client";
+import { useLoginStore } from "../../store/login.Store";
 
 // 求人情報
 interface JobInfo {
@@ -297,6 +298,7 @@ interface ScoutGenerateRequest {
   jobInfo: JobInfo;
   applicantInfo: ApplicantInfo;
   textStyle: "casual" | "formal";
+  createdByEmployeeId?: string;
 }
 
 interface ScoutGenerateResponse {
@@ -305,6 +307,7 @@ interface ScoutGenerateResponse {
 }
 
 const router = useRouter();
+const loginStore = useLoginStore();
 
 // フォームデータ
 const jobInfo = reactive<JobInfo>({
@@ -450,6 +453,7 @@ const handleCreateScout = async () => {
       jobInfo,
       applicantInfo,
       textStyle: textStyle.value,
+      createdByEmployeeId: String(loginStore.user?.employee_id ?? ""),
     };
 
     const { data } = await apiClient.post<ScoutGenerateResponse>(
