@@ -357,4 +357,380 @@ INSERT INTO RETURN_COMMENT_HISTORY_GENRES (scout_message_history_id, genre_id) V
   (6, 1)
 ON CONFLICT (scout_message_history_id, genre_id) DO NOTHING;
 
+-- =====================================
+-- Additional employees for richer test scenarios
+-- (creator must be Member role only)
+-- =====================================
+INSERT INTO EMPLOYEES (employee_id, name, password, position_id, created_at, updated_at) VALUES
+  ('H0004', 'Mei Tanaka', 'member_002', 1, NOW() - INTERVAL '120 days', NOW() - INTERVAL '2 days'),
+  ('H0005', 'Riku Ito', 'member_003', 1, NOW() - INTERVAL '95 days', NOW() - INTERVAL '1 days'),
+  ('H0006', 'Aoi Kato', 'leader_002', 2, NOW() - INTERVAL '130 days', NOW() - INTERVAL '3 days'),
+  ('H0007', 'Sora Nakamura', 'manager_002', 3, NOW() - INTERVAL '140 days', NOW() - INTERVAL '4 days')
+ON CONFLICT (employee_id) DO NOTHING;
+
+-- =====================================
+-- Additional job postings / seekers with varied timestamps
+-- =====================================
+INSERT INTO JOB_POSTINGS (
+  job_posting_id,
+  company_name,
+  job_title,
+  job_description,
+  min_salary,
+  max_salary,
+  required_skills,
+  job_appeal,
+  work_location
+) VALUES
+  (
+    10,
+    'Cedar Labs',
+    'Platform Engineer',
+    'Build internal platforms and improve service reliability.',
+    6200000,
+    9000000,
+    'Go, Kubernetes, Terraform',
+    'Product scale phase with strong ownership opportunities.',
+    'Tokyo / Hybrid'
+  ),
+  (
+    11,
+    'Orbit Commerce',
+    'Frontend Engineer (Vue + TS)',
+    'Develop customer-facing storefront and internal CMS.',
+    5000000,
+    7600000,
+    'Vue 3, TypeScript, Pinia',
+    'Fast release cycle with direct product feedback loop.',
+    'Osaka / Remote'
+  ),
+  (
+    12,
+    'River Analytics',
+    'Data Engineer',
+    'Design and operate data pipelines for analytics and ML.',
+    5800000,
+    8200000,
+    'Python, SQL, Airflow',
+    'Data platform greenfield project.',
+    'Fukuoka'
+  ),
+  (
+    13,
+    'Lighthouse Security',
+    'Security Engineer',
+    'Lead secure SDLC and cloud security improvements.',
+    6500000,
+    9800000,
+    'AWS, SIEM, Threat Modeling',
+    'Cross-functional influence and incident response ownership.',
+    'Yokohama / Hybrid'
+  )
+ON CONFLICT (job_posting_id) DO NOTHING;
+
+INSERT INTO JOB_POSTING_JOB_TYPES (job_posting_id, job_type_id) VALUES
+  (10, 1),
+  (10, 3),
+  (11, 2),
+  (12, 4),
+  (13, 3)
+ON CONFLICT (job_posting_id, job_type_id) DO NOTHING;
+
+INSERT INTO JOB_SEEKERS (job_seeker_id, age, gender, desired_position, created_at, updated_at) VALUES
+  (10, 24, 'female', 'Frontend Engineer', NOW() - INTERVAL '60 days', NOW() - INTERVAL '5 days'),
+  (11, 27, 'male', 'Platform Engineer', NOW() - INTERVAL '75 days', NOW() - INTERVAL '6 days'),
+  (12, 33, 'female', 'Data Engineer', NOW() - INTERVAL '55 days', NOW() - INTERVAL '4 days'),
+  (13, 38, 'male', 'Security Engineer', NOW() - INTERVAL '85 days', NOW() - INTERVAL '9 days'),
+  (14, 29, 'other', 'Backend Engineer', NOW() - INTERVAL '65 days', NOW() - INTERVAL '2 days'),
+  (15, 41, 'female', 'DevOps Engineer', NOW() - INTERVAL '90 days', NOW() - INTERVAL '10 days')
+ON CONFLICT (job_seeker_id) DO NOTHING;
+
+INSERT INTO JOB_SEEKER_JOB_TYPES (job_seeker_id, job_type_id) VALUES
+  (10, 2),
+  (11, 1),
+  (11, 3),
+  (12, 4),
+  (13, 3),
+  (14, 1),
+  (15, 3)
+ON CONFLICT (job_seeker_id, job_type_id) DO NOTHING;
+
+-- =====================================
+-- Additional scout messages
+-- created_by_employee_id is Member only: H0003/H0004/H0005
+-- Includes multiple records older than 3 days for DRAFT/PENDING states
+-- =====================================
+INSERT INTO SCOUT_MESSAGES (
+  scout_message_id,
+  message_content,
+  sent_at,
+  job_posting_id,
+  job_seeker_id,
+  created_by_employee_id,
+  updated_by_employee_id,
+  status,
+  created_at,
+  updated_at
+) VALUES
+  (
+    10,
+    'Your platform engineering background matches our reliability initiatives and cloud migration roadmap.',
+    NULL,
+    10,
+    11,
+    'H0004',
+    'H0004',
+    'DRAFT',
+    NOW() - INTERVAL '12 days',
+    NOW() - INTERVAL '9 days'
+  ),
+  (
+    11,
+    'Your frontend and design system experience fits our product scale phase.',
+    NULL,
+    11,
+    10,
+    'H0003',
+    'H0003',
+    'PENDING_APPROVER',
+    NOW() - INTERVAL '8 days',
+    NOW() - INTERVAL '6 days'
+  ),
+  (
+    12,
+    'Your data pipeline expertise can accelerate our analytics foundation project.',
+    NULL,
+    12,
+    12,
+    'H0005',
+    'H0006',
+    'PENDING_ADMIN',
+    NOW() - INTERVAL '9 days',
+    NOW() - INTERVAL '7 days'
+  ),
+  (
+    13,
+    'Your secure development knowledge aligns with our security-first architecture goals.',
+    NULL,
+    13,
+    13,
+    'H0004',
+    'H0006',
+    'REJECTED_BY_APPROVER',
+    NOW() - INTERVAL '14 days',
+    NOW() - INTERVAL '11 days'
+  ),
+  (
+    14,
+    'Your backend service design is exactly what our high-throughput API team needs.',
+    NULL,
+    1,
+    14,
+    'H0003',
+    'H0007',
+    'REJECTED_BY_ADMIN_TO_APPROVER',
+    NOW() - INTERVAL '16 days',
+    NOW() - INTERVAL '13 days'
+  ),
+  (
+    15,
+    'Your incident response and SRE collaboration background is ideal for our platform mission.',
+    NULL,
+    3,
+    15,
+    'H0005',
+    'H0007',
+    'REJECTED_BY_ADMIN_TO_ADMIN',
+    NOW() - INTERVAL '18 days',
+    NOW() - INTERVAL '15 days'
+  ),
+  (
+    16,
+    'Your frontend architecture leadership would strongly contribute to our next product cycle.',
+    NOW() - INTERVAL '2 days',
+    11,
+    10,
+    'H0003',
+    'H0007',
+    'AVAILABLE',
+    NOW() - INTERVAL '6 days',
+    NOW() - INTERVAL '2 days'
+  ),
+  (
+    17,
+    'Your data engineering profile matches our new growth analytics platform.',
+    NOW() - INTERVAL '1 days',
+    12,
+    12,
+    'H0004',
+    'H0004',
+    'SENT',
+    NOW() - INTERVAL '3 days',
+    NOW() - INTERVAL '1 days'
+  ),
+  (
+    18,
+    'Your cloud platform experience would be an immediate fit for our migration squad.',
+    NULL,
+    10,
+    11,
+    'H0005',
+    'H0005',
+    'DRAFT',
+    NOW() - INTERVAL '4 days',
+    NOW() - INTERVAL '4 days'
+  ),
+  (
+    19,
+    'Your backend and DevOps hybrid background could bridge product and platform teams.',
+    NULL,
+    10,
+    14,
+    'H0003',
+    'H0003',
+    'PENDING_APPROVER',
+    NOW() - INTERVAL '5 days',
+    NOW() - INTERVAL '4 days'
+  ),
+  (
+    20,
+    'Your security operation skills can help us improve our incident readiness posture.',
+    NULL,
+    13,
+    13,
+    'H0004',
+    'H0006',
+    'PENDING_ADMIN',
+    NOW() - INTERVAL '7 days',
+    NOW() - INTERVAL '5 days'
+  ),
+  (
+    21,
+    'Your analytical thinking and business partnership style are ideal for this role.',
+    NULL,
+    4,
+    5,
+    'H0005',
+    'H0006',
+    'REJECTED_BY_APPROVER',
+    NOW() - INTERVAL '10 days',
+    NOW() - INTERVAL '8 days'
+  )
+ON CONFLICT (scout_message_id) DO NOTHING;
+
+-- =====================================
+-- Additional histories
+-- Includes approval-like (sent_at set) and reject-like (return_comment/returned_by set)
+-- =====================================
+INSERT INTO SCOUT_MESSAGE_HISTORIES (
+  scout_message_history_id,
+  scout_message_id,
+  message_content,
+  return_comment,
+  returned_by_employee_id,
+  returned_at,
+  sent_at
+) VALUES
+  (
+    10,
+    11,
+    'Your frontend and design system experience fits our product scale phase.',
+    '具体的な成果指標を追記してください。',
+    'H0006',
+    NOW() - INTERVAL '6 days',
+    NULL
+  ),
+  (
+    11,
+    12,
+    'Your data pipeline expertise can accelerate our analytics foundation project.',
+    NULL,
+    NULL,
+    NULL,
+    NOW() - INTERVAL '7 days'
+  ),
+  (
+    12,
+    13,
+    'Your secure development knowledge aligns with our security-first architecture goals.',
+    '表現が抽象的なので、業務要件との紐づけを明確化してください。',
+    'H0006',
+    NOW() - INTERVAL '11 days',
+    NULL
+  ),
+  (
+    13,
+    14,
+    'Your backend service design is exactly what our high-throughput API team needs.',
+    '管理者観点での法令・リスク表現を見直してください。',
+    'H0007',
+    NOW() - INTERVAL '13 days',
+    NULL
+  ),
+  (
+    14,
+    15,
+    'Your incident response and SRE collaboration background is ideal for our platform mission.',
+    '管理者再申請向けに根拠データを追加してください。',
+    'H0007',
+    NOW() - INTERVAL '15 days',
+    NULL
+  ),
+  (
+    15,
+    16,
+    'Your frontend architecture leadership would strongly contribute to our next product cycle.',
+    NULL,
+    NULL,
+    NULL,
+    NOW() - INTERVAL '2 days'
+  ),
+  (
+    16,
+    17,
+    'Your data engineering profile matches our new growth analytics platform.',
+    NULL,
+    NULL,
+    NULL,
+    NOW() - INTERVAL '1 days'
+  ),
+  (
+    17,
+    19,
+    'Your backend and DevOps hybrid background could bridge product and platform teams.',
+    '魅力訴求が弱いため、冒頭の一文を改善してください。',
+    'H0006',
+    NOW() - INTERVAL '4 days',
+    NULL
+  ),
+  (
+    18,
+    20,
+    'Your security operation skills can help us improve our incident readiness posture.',
+    NULL,
+    NULL,
+    NULL,
+    NOW() - INTERVAL '5 days'
+  ),
+  (
+    19,
+    21,
+    'Your analytical thinking and business partnership style are ideal for this role.',
+    '対象職種との関連性を具体例で補足してください。',
+    'H0006',
+    NOW() - INTERVAL '8 days',
+    NULL
+  )
+ON CONFLICT (scout_message_history_id) DO NOTHING;
+
+INSERT INTO RETURN_COMMENT_HISTORY_GENRES (scout_message_history_id, genre_id) VALUES
+  (10, 10),
+  (12, 2),
+  (13, 13),
+  (13, 14),
+  (14, 14),
+  (17, 7),
+  (19, 8)
+ON CONFLICT (scout_message_history_id, genre_id) DO NOTHING;
+
 COMMIT;

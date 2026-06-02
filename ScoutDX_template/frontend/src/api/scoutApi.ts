@@ -38,7 +38,11 @@ export async function createScout(payload: ScoutEntity): Promise<ScoutEntity> {
 }
 
 // IDを渡して、スカウト文と最新の差戻しコメントを取得するAPI
-export async function fetchScoutDetail(id: number): Promise<{ scout: ScoutEntity, latestRejectComment: string }> {
+export async function fetchScoutDetail(id: number): Promise<{
+  scout: ScoutEntity
+  latestRejectComment: string
+  latestRejectGenreIds?: number[]
+}> {
   const { data } = await apiClient.get(`/api/scouts/${id}`)
   return data
 }

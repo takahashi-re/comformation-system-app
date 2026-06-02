@@ -7,15 +7,17 @@
     <td class="action-cell">
       <button @click="$emit('detail', scout.id)">詳細</button>
 
-      <button
-        v-if="canEditScout(scout)"
-        @click="$emit('edit', scout.id)"
-      >
+      <button v-if="canEditScout(scout)" @click="$emit('edit', scout.id)">
         編集
       </button>
 
       <button
-        v-if="role === 'approver' && ['PENDING_APPROVER', 'REJECTED_BY_ADMIN'].includes(scout.status)"
+        v-if="
+          role === 'approver' &&
+          ['PENDING_APPROVER', 'REJECTED_BY_ADMIN_TO_APPROVER'].includes(
+            scout.status,
+          )
+        "
         @click="$emit('review', scout.id)"
       >
         承認・差戻し
@@ -95,10 +97,15 @@ export default {
     },
     canEditScout(scout) {
       if (this.role !== "sales") return false;
-      return this.isEditable(scout.statusLabel) && scout.creator === this.currentUserId;
+      return (
+        this.isEditable(scout.statusLabel) &&
+        scout.creator === this.currentUserId
+      );
     },
     toGenderLabel(gender) {
-      const normalized = String(gender ?? "").trim().toLowerCase();
+      const normalized = String(gender ?? "")
+        .trim()
+        .toLowerCase();
       if (["male", "m", "男性"].includes(normalized)) return "男性";
       if (["female", "f", "女性"].includes(normalized)) return "女性";
       if (["other", "others", "non-binary", "その他"].includes(normalized)) {
