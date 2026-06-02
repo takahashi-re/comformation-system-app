@@ -161,6 +161,22 @@ export class UserService {
     }
   }
 
+  async deleteUser(employeeId: string, currentEmployeeId: string): Promise<void> {
+    if (employeeId === currentEmployeeId) {
+      throw new BadRequestException("ログイン中のユーザーは削除できません");
+    }
+
+    const exists = await this.employeeRepository.existsByEmployeeId(employeeId);
+    if (!exists) {
+      throw new NotFoundException("対象のユーザーが存在しません");
+    }
+
+    const deleted = await this.employeeRepository.deleteByEmployeeId(employeeId);
+    if (!deleted) {
+      throw new NotFoundException("対象のユーザーが存在しません");
+    }
+  }
+
   private toUserResponse(row: EmployeeRow): UserResponse {
     return {
       userId: row.employee_id,
