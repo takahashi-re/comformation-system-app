@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { ScoutMessageRepository } from "../repository/scout-message.repository";
 import { JobPostingRepository } from "../repository/job-posting.repository";
 import { JobSeekerRepository } from "../repository/job-seeker.repository";
+import { JobTypeRepository } from "../repository/job-type.repository";
 
 interface JobInfo {
   companyName: string;
@@ -52,6 +53,7 @@ export class AiGenerateService {
     private readonly scoutMessageRepository: ScoutMessageRepository,
     private readonly jobPostingRepository: JobPostingRepository,
     private readonly jobSeekerRepository: JobSeekerRepository,
+    private readonly jobTypeRepository: JobTypeRepository,
   ) {}
 
   getSample(): { body: string } {
@@ -120,7 +122,7 @@ export class AiGenerateService {
             "何卒ご検討のほどよろしくお願い申し上げます。",
           ].join("\n");
 
-    const jobPosting = await this.jobPostingRepository.create({
+    const jobPosting = await this.jobPostingRepository.createOrFindByTitle({
       company_name: input.jobInfo.companyName.trim(),
       job_title: input.jobInfo.jobTitle.trim(),
       job_description: input.jobInfo.businessContent.trim(),
@@ -144,6 +146,19 @@ export class AiGenerateService {
       created_by_employee_id: input.createdByEmployeeId?.trim() || null,
       status: "DRAFT",
     });
+
+    // 単一職種なら [input.jobInfo.jobTitle]、複数タグ化したいなら分割ロジックを入れる
+    const typeNames = [input.jobInfo.jobTitle.trim()]; // 必要ならパースロジックで複数化
+    await this.jobTypeRepository.linkMultipleToJobPosting(
+      Number(jobPosting.job_posting_id),
+      typeNames,
+    );
+
+    // jobPosting を作成した直後に追加
+    await this.jobPostingRepository.linkJobPostingToTitle(
+      Number(jobPosting.job_posting_id),
+      input.jobInfo.jobTitle.trim(),
+    );
 
     return { body, scoutId: String(scoutMessage.scout_message_id) };
   }

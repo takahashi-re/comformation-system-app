@@ -256,4 +256,17 @@ export class EmployeeRepository {
       await runner.release();
     }
   }
+
+  async deleteByEmployeeId(employeeId: string): Promise<boolean> {
+    const rows = await this.dataSource.query(
+      `
+        DELETE FROM EMPLOYEES
+        WHERE employee_id = $1
+        RETURNING employee_id
+      `,
+      [employeeId],
+    );
+
+    return rows.length > 0;
+  }
 }
