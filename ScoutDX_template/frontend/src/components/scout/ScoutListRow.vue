@@ -8,7 +8,7 @@
       <button @click="$emit('detail', scout.id)">詳細</button>
 
       <button
-        v-if="role === 'sales' && isEditable(scout.statusLabel)"
+        v-if="canEditScout(scout)"
         @click="$emit('edit', scout.id)"
       >
         編集
@@ -47,6 +47,10 @@ export default {
       type: Array,
       required: true,
     },
+    currentUserId: {
+      type: String,
+      default: "",
+    },
     rowClass: {
       type: String,
       default: "",
@@ -65,6 +69,9 @@ export default {
       }
       if (this.selectedColumns.includes("status")) {
         parts.push(`ステータス：${this.scout.statusLabel}`);
+      }
+      if (this.selectedColumns.includes("creator")) {
+        parts.push(`制作者：${this.scout.creator || "-"}`);
       }
       if (this.selectedColumns.includes("reviewer")) {
         parts.push(`最新承認/差戻し者：${this.scout.reviewerName || "-"}`);
@@ -85,6 +92,10 @@ export default {
   methods: {
     isEditable(status) {
       return ["下書き", "承認者差戻し", "管理者差戻し"].includes(status);
+    },
+    canEditScout(scout) {
+      if (this.role !== "sales") return false;
+      return this.isEditable(scout.statusLabel) && scout.creator === this.currentUserId;
     },
     toGenderLabel(gender) {
       const normalized = String(gender ?? "").trim().toLowerCase();
