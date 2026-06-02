@@ -20,7 +20,6 @@ import { ScoutService } from "./service/scout.service";
 import { UserService } from "./service/user.service";
 import { ScoutMessageEntity } from "./type/scout-message";
 import { ScoutEntity } from "./type/scout";
-import { JobTypeRepository } from "./repository/job-type.repository";
 
 @Module({
   imports: [TypeOrmModule.forFeature([ScoutEntity, ScoutMessageEntity])],
@@ -45,7 +44,6 @@ import { JobTypeRepository } from "./repository/job-type.repository";
     UserService,
     LoginRepository,
     EmployeeRepository,
-    JobTypeRepository,
   ],
 })
 export class ScoutModule {}

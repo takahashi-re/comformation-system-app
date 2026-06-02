@@ -19,16 +19,6 @@ export interface ReturnCommentGenreWithPositionsRow extends ReturnCommentGenreRo
 export class ReturnCommentGenreRepository {
   constructor(private readonly dataSource: DataSource) {}
 
-  private async syncPrimaryKeySequence(): Promise<void> {
-    await this.dataSource.query(`
-      SELECT setval(
-        pg_get_serial_sequence('return_comment_genres', 'genre_id'),
-        COALESCE((SELECT MAX(genre_id) FROM return_comment_genres), 0) + 1,
-        false
-      )
-    `);
-  }
-
   async findAllGenres(): Promise<ReturnCommentGenreRow[]> {
     return this.dataSource.query(`
       SELECT genre_id, genre_name
@@ -57,42 +47,16 @@ export class ReturnCommentGenreRepository {
   }
 
   async addGenre(genreName: string): Promise<ReturnCommentGenreRow> {
-    const normalized = String(genreName ?? "").trim();
-    if (!normalized) {
-      throw new Error("genreName is required");
-    }
-
-    // 既存レコードを大文字小文字無視で検索
-    const existing = await this.dataSource.query(
-      `SELECT genre_id, genre_name FROM RETURN_COMMENT_GENRES WHERE LOWER(TRIM(genre_name)) = LOWER(TRIM($1)) LIMIT 1`,
-      [normalized],
+    const rows = await this.dataSource.query(
+      `
+        INSERT INTO RETURN_COMMENT_GENRES (genre_name)
+        VALUES ($1)
+        RETURNING genre_id, genre_name
+      `,
+      [genreName],
     );
-    if (existing && existing.length) {
-      return existing[0];
-    }
 
-    // 既存レコードチェック後、挿入前にシーケンスを同期
-    await this.syncPrimaryKeySequence();
-
-    try {
-      const rows = await this.dataSource.query(
-        `
-          INSERT INTO RETURN_COMMENT_GENRES (genre_name)
-          VALUES ($1)
-          RETURNING genre_id, genre_name
-        `,
-        [normalized],
-      );
-      return rows[0];
-    } catch (err: any) {
-      // Postgres の一意制約等で競合が起きた想定（スキーマにユニークが無くても安全対策）
-      const retry = await this.dataSource.query(
-        `SELECT genre_id, genre_name FROM RETURN_COMMENT_GENRES WHERE LOWER(TRIM(genre_name)) = LOWER(TRIM($1)) LIMIT 1`,
-        [normalized],
-      );
-      if (retry && retry.length) return retry[0];
-      throw err;
-    }
+    return rows[0];
   }
 
   async deleteGenre(genreId: number): Promise<boolean> {
