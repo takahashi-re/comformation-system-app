@@ -50,6 +50,18 @@
             </label>
           </div>
 
+          <div v-if="role === 'sales'" class="filter-group">
+            <div class="filter-group-title">担当者</div>
+            <label class="filter-check">
+              <input type="checkbox" value="mine" v-model="filterOwners" />
+              自分
+            </label>
+            <label class="filter-check">
+              <input type="checkbox" value="others" v-model="filterOwners" />
+              他の担当者
+            </label>
+          </div>
+
           <button
             class="toggle-advanced"
             @click="showAdvancedFilters = !showAdvancedFilters"
@@ -205,7 +217,8 @@ const STATUS_MAP = {
   PENDING_APPROVER: "承認者承認待ち",
   REJECTED_BY_APPROVER: "承認者差戻し",
   PENDING_ADMIN: "管理者承認待ち",
-  REJECTED_BY_ADMIN: "管理者差戻し",
+  REJECTED_BY_ADMIN_TO_APPROVER: "管理者差戻し",
+  REJECTED_BY_ADMIN_TO_ADMIN: "管理者差戻し",
   AVAILABLE: "利用可能",
   SENT: "利用可能",
 };
@@ -238,6 +251,7 @@ export default {
       filterJobs: [],
       filterGenders: [],
       filterAgeGroups: [],
+      filterOwners: [],
       updatedDays: "",
       showAdvancedFilters: false,
       selectedColumns: ["company", "job", "status", "reviewer"],
@@ -269,11 +283,16 @@ export default {
 
     filteredScouts() {
       return this.scouts.filter((s) => {
-        const routeScope = this.$route.query.scope === "mine" ? "mine" : "all";
-        const mineMatched =
-          routeScope !== "mine" ||
-          this.positionId !== 1 ||
-          s.creator === this.loginStore.user?.employee_id;
+        const myId = this.loginStore.user?.employee_id;
+        const ownerMatched = (() => {
+          if (this.positionId !== 1) return true;
+          if (this.filterOwners.length === 0) return true;
+          const isMine = s.creator === myId;
+          return (
+            (this.filterOwners.includes("mine") && isMine) ||
+            (this.filterOwners.includes("others") && !isMine)
+          );
+        })();
         const statusMatched =
           this.filterStatuses.length === 0 ||
           this.filterStatuses.includes(s.statusLabel);
@@ -296,7 +315,7 @@ export default {
         })();
 
         return (
-          mineMatched &&
+          ownerMatched &&
           statusMatched &&
           companyMatched &&
           jobMatched &&
@@ -324,12 +343,7 @@ export default {
       return Array.from(set);
     },
     ageGroupOptions() {
-      const set = new Set(
-        this.scouts
-          .map((s) => this.toAgeGroup(s.job_seeker_age))
-          .filter((ageGroup) => ageGroup !== "不明"),
-      );
-      return Array.from(set);
+      return ["10代", "20代", "30代", "40代", "50代", "60代", "70代"];
     },
     updatedDaysNumber() {
       const value = Number(this.updatedDays);
@@ -446,7 +460,7 @@ export default {
       const canAccessReview = this.role === "approver" || this.role === "admin";
       return (
         canAccessReview &&
-        ["PENDING_APPROVER", "REJECTED_BY_ADMIN"].includes(status)
+        ["PENDING_APPROVER", "REJECTED_BY_ADMIN_TO_APPROVER"].includes(status)
       );
     },
 
@@ -504,6 +518,7 @@ export default {
       this.filterJobs = [];
       this.filterGenders = [];
       this.filterAgeGroups = [];
+      this.filterOwners = [];
       this.updatedDays = "";
     },
 
@@ -529,7 +544,15 @@ export default {
       this.filterJobs = toList(this.$route.query.jobs);
       this.filterGenders = toList(this.$route.query.genders);
       this.filterAgeGroups = toList(this.$route.query.ageGroups);
+      this.filterOwners = toList(this.$route.query.owners);
       this.updatedDays = String(this.$route.query.updatedDays || "");
+
+      if (this.role === "sales" && this.filterOwners.length === 0) {
+        const routeScope = this.$route.query.scope === "mine" ? "mine" : "all";
+        if (routeScope === "mine") {
+          this.filterOwners = ["mine"];
+        }
+      }
 
       this.showAdvancedFilters =
         this.filterCompanies.length > 0 ||

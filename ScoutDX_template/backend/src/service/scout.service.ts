@@ -92,6 +92,14 @@ export class ScoutService {
       }));
   }
 
+  async getAllGenres() {
+    const genres = await this.returnCommentGenreRepository.findAllGenres();
+    return genres.map((genre) => ({
+      genre_id: Number(genre.genre_id),
+      genre_name: genre.genre_name,
+    }));
+  }
+
   async addGenreForPosition(positionId: number, genreName: string) {
     if (!Number.isFinite(positionId) || positionId <= 0) {
       throw new BadRequestException("不正なロール情報です");
@@ -224,7 +232,9 @@ export class ScoutService {
     const scout = await this.scoutRepository.findById(id);
     const latestRejectComment =
       await this.scoutRepository.findLatestRejectCommentByScoutId(id);
-    return { scout, latestRejectComment };
+    const latestRejectGenreIds =
+      await this.scoutRepository.findLatestRejectGenreIdsByScoutId(id);
+    return { scout, latestRejectComment, latestRejectGenreIds };
   }
 
   async findApprovalDetail(id: string) {
@@ -376,9 +386,11 @@ export class ScoutService {
     }
 
     const nextStatus =
-      !isAdmin || dto.reapplyTarget === "APPROVER"
+      !isAdmin
         ? "REJECTED_BY_APPROVER"
-        : "REJECTED_BY_ADMIN";
+        : dto.reapplyTarget === "APPROVER"
+          ? "REJECTED_BY_ADMIN_TO_APPROVER"
+          : "REJECTED_BY_ADMIN_TO_ADMIN";
 
     const genreIds = await this.resolveGenreIdsFromReasonKeys(dto.reasonKeys);
 
