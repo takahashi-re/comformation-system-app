@@ -108,7 +108,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useLoginStore } from "../../store/login.Store";
 import { fetchScoutDetail, fetchScouts } from "../../api/scoutApi";
-import { fetchMyGenres } from "../../api/genreApi";
+import { fetchAllGenres } from "../../api/genreApi";
 import { SCOUT_STATUS_LABEL } from "../../shared/scoutStatus";
 import type { ScoutEntity } from "../../type/scout";
 import type { GenreItem } from "../../api/genreApi";
@@ -129,7 +129,7 @@ const loginStore = useLoginStore();
 
 const scope = ref<Scope>("all");
 const scouts = ref<DashboardScout[]>([]);
-const rejectCommentsById = ref<Record<string, string>>({});
+const rejectGenreIdsByScoutId = ref<Record<string, number[]>>({});
 const returnGenres = ref<GenreItem[]>([]);
 const showAllReasonMetrics = ref(false);
 
@@ -155,9 +155,10 @@ const staleTargetStatusesByRole: Record<number, string[]> = {
     "PENDING_APPROVER",
     "PENDING_ADMIN",
     "REJECTED_BY_APPROVER",
-    "REJECTED_BY_ADMIN",
+    "REJECTED_BY_ADMIN_TO_APPROVER",
+    "REJECTED_BY_ADMIN_TO_ADMIN",
   ],
-  2: ["PENDING_APPROVER", "REJECTED_BY_ADMIN"],
+  2: ["PENDING_APPROVER", "REJECTED_BY_ADMIN_TO_APPROVER"],
   3: ["PENDING_ADMIN", "REJECTED_BY_APPROVER"],
 };
 
@@ -182,7 +183,7 @@ const statusCardDefinition = [
     color: "blue",
   },
   {
-    key: "REJECTED_BY_ADMIN",
+    key: "ADMIN_RETURNED",
     label: "管理者差戻し",
     filterLabel: "管理者差戻し",
     color: "orange",
@@ -259,7 +260,8 @@ const statusCounts = computed(() => {
     PENDING_APPROVER: 0,
     REJECTED_BY_APPROVER: 0,
     PENDING_ADMIN: 0,
-    REJECTED_BY_ADMIN: 0,
+    REJECTED_BY_ADMIN_TO_APPROVER: 0,
+    REJECTED_BY_ADMIN_TO_ADMIN: 0,
     AVAILABLE: 0,
   };
 
@@ -296,7 +298,11 @@ const reasonBarColors = [
 const statusCards = computed(() =>
   statusCardDefinition.map((card) => ({
     ...card,
-    count: statusCounts.value[card.key],
+    count:
+      card.key === "ADMIN_RETURNED"
+        ? statusCounts.value.REJECTED_BY_ADMIN_TO_APPROVER +
+          statusCounts.value.REJECTED_BY_ADMIN_TO_ADMIN
+        : statusCounts.value[card.key as keyof typeof statusCounts.value],
   })),
 );
 
@@ -307,7 +313,8 @@ const stallMetrics = computed(() => [
     label: "差戻し未対応",
     count:
       statusCounts.value.REJECTED_BY_APPROVER +
-      statusCounts.value.REJECTED_BY_ADMIN,
+      statusCounts.value.REJECTED_BY_ADMIN_TO_APPROVER +
+      statusCounts.value.REJECTED_BY_ADMIN_TO_ADMIN,
   },
   { label: "下書きのまま", count: statusCounts.value.DRAFT },
   {
@@ -330,12 +337,13 @@ const allReasonMetrics = computed(() => {
 
   return rows
     .map((item: { key: string; label: string }, index: number) => {
+      const genreId = Number(item.key);
       const count = scopedScouts.value.reduce((acc: number, scout: DashboardScout) => {
-        const comment = String(rejectCommentsById.value[scout.id] ?? "");
-        if (!comment) {
+        const genreIds = rejectGenreIdsByScoutId.value[scout.id] ?? [];
+        if (!Number.isFinite(genreId) || !genreIds.length) {
           return acc;
         }
-        return comment.includes(item.label) ? acc + 1 : acc;
+        return genreIds.includes(genreId) ? acc + 1 : acc;
       }, 0);
 
       return {
@@ -444,15 +452,19 @@ const loadScouts = async (): Promise<void> => {
     }));
 };
 
-const loadRejectComments = async (): Promise<void> => {
+const loadRejectGenreIds = async (): Promise<void> => {
   const rejectIds = scopedScouts.value
     .filter((scout: DashboardScout) =>
-      ["REJECTED_BY_APPROVER", "REJECTED_BY_ADMIN"].includes(
+      [
+        "REJECTED_BY_APPROVER",
+        "REJECTED_BY_ADMIN_TO_APPROVER",
+        "REJECTED_BY_ADMIN_TO_ADMIN",
+      ].includes(
         normalizeStatus(scout.status),
       ),
     )
     .map((scout: DashboardScout) => scout.id)
-    .filter((id: string) => !rejectCommentsById.value[id]);
+    .filter((id: string) => !rejectGenreIdsByScoutId.value[id]);
 
   if (!rejectIds.length) {
     return;
@@ -462,23 +474,30 @@ const loadRejectComments = async (): Promise<void> => {
     rejectIds.map(async (id: string) => {
       try {
         const detail = await fetchScoutDetail(Number(id));
-        return { id, comment: detail.latestRejectComment ?? "" };
+        return {
+          id,
+          genreIds: Array.isArray(detail.latestRejectGenreIds)
+            ? detail.latestRejectGenreIds
+                .map((genreId) => Number(genreId))
+                .filter((genreId) => Number.isFinite(genreId))
+            : [],
+        };
       } catch {
-        return { id, comment: "" };
+        return { id, genreIds: [] };
       }
     }),
   );
 
-  const nextMap = { ...rejectCommentsById.value };
+  const nextMap = { ...rejectGenreIdsByScoutId.value };
   for (const row of fetched) {
-    nextMap[row.id] = row.comment;
+    nextMap[row.id] = row.genreIds;
   }
-  rejectCommentsById.value = nextMap;
+  rejectGenreIdsByScoutId.value = nextMap;
 };
 
 const loadReturnGenres = async (): Promise<void> => {
   try {
-    returnGenres.value = await fetchMyGenres();
+    returnGenres.value = await fetchAllGenres();
   } catch {
     returnGenres.value = [];
   }
@@ -487,12 +506,12 @@ const loadReturnGenres = async (): Promise<void> => {
 onMounted(async () => {
   await loadScouts();
   await loadReturnGenres();
-  await loadRejectComments();
+  await loadRejectGenreIds();
 });
 
 watch(effectiveScope, async () => {
   showAllReasonMetrics.value = false;
-  await loadRejectComments();
+  await loadRejectGenreIds();
 });
 </script>
 

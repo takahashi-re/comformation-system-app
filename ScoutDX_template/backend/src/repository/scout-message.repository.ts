@@ -135,10 +135,8 @@ export class ScoutMessageRepository {
           COALESCE(jp.job_appeal, '') AS job_appeal,
           COALESCE(jp.work_location, '') AS work_location,
           COALESCE(latest_history.return_comment, '') AS latest_reject_comment,
-          COALESCE(latest_history.returned_by_employee_id, '') AS returned_by_employee_id,
           COALESCE(updated_emp.name, '') AS updated_by_name,
           COALESCE(returned_emp.name, '') AS returned_by_name,
-          COALESCE(returned_pos.position_name, '') AS returned_by_position_name,
           COALESCE(returned_emp.name, updated_emp.name, '') AS reviewer_name
         FROM SCOUT_MESSAGES sm
         LEFT JOIN EMPLOYEES creator_emp
@@ -160,8 +158,6 @@ export class ScoutMessageRepository {
         ) latest_history ON TRUE
         LEFT JOIN EMPLOYEES returned_emp
           ON returned_emp.employee_id = latest_history.returned_by_employee_id
-        LEFT JOIN POSITIONS returned_pos
-          ON returned_pos.position_id = returned_emp.position_id
         WHERE sm.scout_message_id = $1
         LIMIT 1
       `,
@@ -258,7 +254,11 @@ export class ScoutMessageRepository {
     };
   }
 
-  async updateScout(id: string, body: string, status: string): Promise<any | null> {
+  async updateScout(
+    id: string,
+    body: string,
+    status: string,
+  ): Promise<any | null> {
     const rows = await this.dataSource.query(
       `
         UPDATE SCOUT_MESSAGES
@@ -286,13 +286,40 @@ export class ScoutMessageRepository {
         SELECT return_comment
         FROM SCOUT_MESSAGE_HISTORIES
         WHERE scout_message_id = $1
+          AND COALESCE(TRIM(return_comment), '') <> ''
         ORDER BY returned_at DESC NULLS LAST, scout_message_history_id DESC
         LIMIT 1
       `,
       [Number(id)],
     );
 
-    return rows[0]?.return_comment ?? '';
+    return rows[0]?.return_comment ?? "";
+  }
+
+  async findLatestRejectGenreIdsByScoutId(id: string): Promise<number[]> {
+    const rows = await this.dataSource.query(
+      `
+        WITH latest_reject_history AS (
+          SELECT h.scout_message_history_id
+          FROM SCOUT_MESSAGE_HISTORIES h
+          WHERE h.scout_message_id = $1
+            AND COALESCE(TRIM(h.return_comment), '') <> ''
+            AND h.returned_by_employee_id IS NOT NULL
+          ORDER BY h.returned_at DESC NULLS LAST, h.scout_message_history_id DESC
+          LIMIT 1
+        )
+        SELECT rch.genre_id
+        FROM RETURN_COMMENT_HISTORY_GENRES rch
+        INNER JOIN latest_reject_history lrh
+          ON lrh.scout_message_history_id = rch.scout_message_history_id
+        ORDER BY rch.genre_id ASC
+      `,
+      [Number(id)],
+    );
+
+    return rows
+      .map((row: { genre_id: number | string }) => Number(row.genre_id))
+      .filter((genreId: number) => Number.isFinite(genreId));
   }
 
   async saveGeneratedMessage(messageContent: string): Promise<number> {

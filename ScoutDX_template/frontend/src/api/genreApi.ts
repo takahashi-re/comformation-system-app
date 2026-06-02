@@ -10,6 +10,11 @@ export async function fetchMyGenres(): Promise<GenreItem[]> {
   return data;
 }
 
+export async function fetchAllGenres(): Promise<GenreItem[]> {
+  const { data } = await apiClient.get<GenreItem[]>('/api/return-comment-genres/all');
+  return data;
+}
+
 export async function addMyGenre(name: string): Promise<GenreItem[]> {
   const { data } = await apiClient.post<GenreItem[]>('/api/return-comment-genres', { name });
   return data;

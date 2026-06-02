@@ -96,7 +96,7 @@ function findIncludedNgWords(text, words) {
 function resolveNextStatus(currentStatus) {
   const status = String(currentStatus ?? "").trim();
 
-  if (status === "REJECTED_BY_ADMIN") {
+  if (status === "REJECTED_BY_ADMIN_TO_ADMIN") {
     return "PENDING_ADMIN";
   }
 

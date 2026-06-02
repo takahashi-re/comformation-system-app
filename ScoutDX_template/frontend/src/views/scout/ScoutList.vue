@@ -50,8 +50,23 @@
             </label>
           </div>
 
-          <button class="toggle-advanced" @click="showAdvancedFilters = !showAdvancedFilters">
-            {{ showAdvancedFilters ? '詳細検索を閉じる' : '詳細検索' }}
+          <div v-if="role === 'sales'" class="filter-group">
+            <div class="filter-group-title">担当者</div>
+            <label class="filter-check">
+              <input type="checkbox" value="mine" v-model="filterOwners" />
+              自分
+            </label>
+            <label class="filter-check">
+              <input type="checkbox" value="others" v-model="filterOwners" />
+              他の担当者
+            </label>
+          </div>
+
+          <button
+            class="toggle-advanced"
+            @click="showAdvancedFilters = !showAdvancedFilters"
+          >
+            {{ showAdvancedFilters ? "詳細検索を閉じる" : "詳細検索" }}
           </button>
 
           <div v-if="showAdvancedFilters" class="filter-group">
@@ -80,7 +95,11 @@
 
           <div v-if="showAdvancedFilters" class="filter-group">
             <div class="filter-group-title">求職者 性別</div>
-            <label v-for="gender in genderOptions" :key="gender" class="filter-check">
+            <label
+              v-for="gender in genderOptions"
+              :key="gender"
+              class="filter-check"
+            >
               <input type="checkbox" :value="gender" v-model="filterGenders" />
               {{ gender }}
             </label>
@@ -88,22 +107,30 @@
 
           <div v-if="showAdvancedFilters" class="filter-group">
             <div class="filter-group-title">求職者 年代</div>
-            <label v-for="ageGroup in ageGroupOptions" :key="ageGroup" class="filter-check">
-              <input type="checkbox" :value="ageGroup" v-model="filterAgeGroups" />
+            <label
+              v-for="ageGroup in ageGroupOptions"
+              :key="ageGroup"
+              class="filter-check"
+            >
+              <input
+                type="checkbox"
+                :value="ageGroup"
+                v-model="filterAgeGroups"
+              />
               {{ ageGroup }}
             </label>
           </div>
 
           <div v-if="showAdvancedFilters" class="filter-group">
             <div class="filter-group-title">最終更新日からの経過日数</div>
-            <div class="filter-check" style="align-items: center; gap: 6px;">
+            <div class="filter-check" style="align-items: center; gap: 6px">
               <input
                 type="number"
                 min="0"
                 step="1"
                 v-model.number="updatedDays"
                 placeholder="n 日"
-                style="width: 96px;"
+                style="width: 96px"
               />
               日以上
             </div>
@@ -155,7 +182,11 @@
           </label>
 
           <label>
-            <input type="checkbox" value="updatedAt" v-model="selectedColumns" />
+            <input
+              type="checkbox"
+              value="updatedAt"
+              v-model="selectedColumns"
+            />
             最終更新日
           </label>
 
@@ -183,7 +214,8 @@ const STATUS_MAP = {
   PENDING_APPROVER: "承認者承認待ち",
   REJECTED_BY_APPROVER: "承認者差戻し",
   PENDING_ADMIN: "管理者承認待ち",
-  REJECTED_BY_ADMIN: "管理者差戻し",
+  REJECTED_BY_ADMIN_TO_APPROVER: "管理者差戻し",
+  REJECTED_BY_ADMIN_TO_ADMIN: "管理者差戻し",
   AVAILABLE: "利用可能",
   SENT: "利用可能",
 };
@@ -216,7 +248,8 @@ export default {
       filterJobs: [],
       filterGenders: [],
       filterAgeGroups: [],
-      updatedDays: '',
+      filterOwners: [],
+      updatedDays: "",
       showAdvancedFilters: false,
       selectedColumns: ["company", "job", "status", "reviewer"],
       scouts: [],
@@ -247,11 +280,16 @@ export default {
 
     filteredScouts() {
       return this.scouts.filter((s) => {
-        const routeScope = this.$route.query.scope === "mine" ? "mine" : "all";
-        const mineMatched =
-          routeScope !== "mine" ||
-          this.positionId !== 1 ||
-          s.creator === this.loginStore.user?.employee_id;
+        const myId = this.loginStore.user?.employee_id;
+        const ownerMatched = (() => {
+          if (this.positionId !== 1) return true;
+          if (this.filterOwners.length === 0) return true;
+          const isMine = s.creator === myId;
+          return (
+            (this.filterOwners.includes("mine") && isMine) ||
+            (this.filterOwners.includes("others") && !isMine)
+          );
+        })();
         const statusMatched =
           this.filterStatuses.length === 0 ||
           this.filterStatuses.includes(s.statusLabel);
@@ -259,8 +297,7 @@ export default {
           this.filterCompanies.length === 0 ||
           this.filterCompanies.includes(s.company);
         const jobMatched =
-          this.filterJobs.length === 0 ||
-          this.filterJobs.includes(s.job);
+          this.filterJobs.length === 0 || this.filterJobs.includes(s.job);
         const genderMatched =
           this.filterGenders.length === 0 ||
           this.filterGenders.includes(this.toGenderLabel(s.job_seeker_gender));
@@ -275,7 +312,7 @@ export default {
         })();
 
         return (
-          mineMatched &&
+          ownerMatched &&
           statusMatched &&
           companyMatched &&
           jobMatched &&
@@ -298,17 +335,12 @@ export default {
       const set = new Set(
         this.scouts
           .map((s) => this.toGenderLabel(s.job_seeker_gender))
-          .filter((gender) => gender !== '不明'),
+          .filter((gender) => gender !== "不明"),
       );
       return Array.from(set);
     },
     ageGroupOptions() {
-      const set = new Set(
-        this.scouts
-          .map((s) => this.toAgeGroup(s.job_seeker_age))
-          .filter((ageGroup) => ageGroup !== '不明'),
-      );
-      return Array.from(set);
+      return ["10代", "20代", "30代", "40代", "50代", "60代", "70代"];
     },
     updatedDaysNumber() {
       const value = Number(this.updatedDays);
@@ -322,15 +354,19 @@ export default {
         const rows = await fetchScouts();
         this.scouts = rows.map((row) => ({
           id: row.id,
-          creator: row.creator || '',
+          creator: row.creator || "",
           company: row.company_name || "-",
           job: row.job_title || "-",
           status: row.status,
           statusLabel: STATUS_MAP[row.status] || "-",
           job_seeker_age: row.job_seeker_age ?? null,
-          job_seeker_gender: row.job_seeker_gender ?? '',
-          reviewerName: row.reviewer_name || row.returned_by_name || row.updated_by_name || '-',
-          updatedAt: row.updatedAt ?? row.updated_at ?? '',
+          job_seeker_gender: row.job_seeker_gender ?? "",
+          reviewerName:
+            row.reviewer_name ||
+            row.returned_by_name ||
+            row.updated_by_name ||
+            "-",
+          updatedAt: row.updatedAt ?? row.updated_at ?? "",
         }));
       } catch (e) {
         console.error(e);
@@ -352,7 +388,7 @@ export default {
         parts.push(`ステータス：${scout.statusLabel}`);
       }
       if (this.selectedColumns.includes("reviewer")) {
-        parts.push(`最新承認/差戻し者：${scout.reviewerName || '-'}`);
+        parts.push(`最新承認/差戻し者：${scout.reviewerName || "-"}`);
       }
       if (this.selectedColumns.includes("age")) {
         parts.push(`年齢：${this.formatAge(scout.job_seeker_age)}`);
@@ -369,21 +405,23 @@ export default {
 
     formatAge(age) {
       const n = Number(age);
-      if (!Number.isFinite(n) || n <= 0) return '-';
+      if (!Number.isFinite(n) || n <= 0) return "-";
       return `${n}歳`;
     },
 
     formatDate(value) {
       const date = new Date(value);
-      if (!date || Number.isNaN(date.getTime())) return '-';
+      if (!date || Number.isNaN(date.getTime())) return "-";
       const y = date.getFullYear();
-      const m = String(date.getMonth() + 1).padStart(2, '0');
-      const d = String(date.getDate()).padStart(2, '0');
+      const m = String(date.getMonth() + 1).padStart(2, "0");
+      const d = String(date.getDate()).padStart(2, "0");
       return `${y}/${m}/${d}`;
     },
 
     toGenderLabel(gender) {
-      const normalized = String(gender ?? "").trim().toLowerCase();
+      const normalized = String(gender ?? "")
+        .trim()
+        .toLowerCase();
       if (["male", "m", "男性"].includes(normalized)) return "男性";
       if (["female", "f", "女性"].includes(normalized)) return "女性";
       if (["other", "others", "non-binary", "その他"].includes(normalized)) {
@@ -417,7 +455,10 @@ export default {
 
     canReview(status) {
       const canAccessReview = this.role === "approver" || this.role === "admin";
-      return canAccessReview && ["PENDING_APPROVER", "REJECTED_BY_ADMIN"].includes(status);
+      return (
+        canAccessReview &&
+        ["PENDING_APPROVER", "REJECTED_BY_ADMIN_TO_APPROVER"].includes(status)
+      );
     },
 
     getRowClass(status) {
@@ -474,7 +515,8 @@ export default {
       this.filterJobs = [];
       this.filterGenders = [];
       this.filterAgeGroups = [];
-      this.updatedDays = '';
+      this.filterOwners = [];
+      this.updatedDays = "";
     },
 
     applyFiltersFromRoute() {
@@ -499,14 +541,22 @@ export default {
       this.filterJobs = toList(this.$route.query.jobs);
       this.filterGenders = toList(this.$route.query.genders);
       this.filterAgeGroups = toList(this.$route.query.ageGroups);
-      this.updatedDays = String(this.$route.query.updatedDays || '');
+      this.filterOwners = toList(this.$route.query.owners);
+      this.updatedDays = String(this.$route.query.updatedDays || "");
+
+      if (this.role === "sales" && this.filterOwners.length === 0) {
+        const routeScope = this.$route.query.scope === "mine" ? "mine" : "all";
+        if (routeScope === "mine") {
+          this.filterOwners = ["mine"];
+        }
+      }
 
       this.showAdvancedFilters =
         this.filterCompanies.length > 0 ||
         this.filterJobs.length > 0 ||
         this.filterGenders.length > 0 ||
         this.filterAgeGroups.length > 0 ||
-        this.updatedDays !== '';
+        this.updatedDays !== "";
     },
   },
 };

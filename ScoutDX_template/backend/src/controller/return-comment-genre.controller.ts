@@ -43,6 +43,13 @@ export class ReturnCommentGenreController {
     return this.scoutService.getGenresForPosition(positionId);
   }
 
+  @Get('all')
+  async findAll(@Req() request: Request) {
+    // Keep session validation for consistency with existing endpoints.
+    this.getCurrentPositionId(request);
+    return this.scoutService.getAllGenres();
+  }
+
   @Post()
   async addMine(
     @Req() request: Request,
