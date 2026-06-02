@@ -42,7 +42,7 @@ export class LoginController {
     response.cookie(this.SESSION_COOKIE_NAME, session.access_token, {
       httpOnly: true,
       secure: false, // ローカル開発用（本番環境では true に）
-      sameSite: "strict",
+      sameSite: "lax", // ← strict から lax に変更（dev のクロスオリジン POST で Cookie が送られない問題対策）
       maxAge: this.COOKIE_MAX_AGE, // token の有効期限を設定
       path: "/", // Cookie の有効パスをルートに設定（全てのパスで有効）
     });
@@ -54,14 +54,10 @@ export class LoginController {
    * レスポンス: 200 OK { user: LoginSession }
    */
   @Get("me")
-  getMe(
-    @Req() request: Request,
-  ): LoginSession {
+  getMe(@Req() request: Request): LoginSession {
     const sessionToken = request.cookies?.[this.SESSION_COOKIE_NAME];
     if (!sessionToken) {
-      throw new UnauthorizedException(
-        "ログインセッションが存在しません",
-      );
+      throw new UnauthorizedException("ログインセッションが存在しません");
     }
 
     return this.loginService.getSessionByToken(sessionToken);
