@@ -8,6 +8,7 @@
       <div class="box-content">
         <textarea
           v-model="scout.body"
+          :readonly="isBodyReadOnly"
           class="textarea"
           placeholder="（スカウト文を入力・編集）"
         ></textarea>
@@ -16,7 +17,18 @@
 
     <!-- 右 -->
     <div class="right">
-      <div class="box-title">差戻しコメント</div>
+      <div
+        class="box-title"
+        style="display: flex; justify-content: space-between; align-items: center; gap: 8px"
+      >
+        <span>差戻しコメント</span>
+        <span
+          v-if="rejecterDisplay"
+          style="font-size: 12px; font-weight: 500; white-space: nowrap"
+        >
+          {{ rejecterDisplay }}
+        </span>
+      </div>
       <div class="box-content">
         <div class="comment-box" v-if="latestRejectComment">
           {{ latestRejectComment }}
@@ -24,15 +36,19 @@
         <div class="comment-box" v-else>差戻しコメントはありません</div>
       </div>
       <div class="actions">
-        <button class="btn save" @click="saveDraft">保存</button>
-        <button class="btn submit" @click="submit">申請</button>
+        <button class="btn save" :disabled="isBodyReadOnly" @click="saveDraft">
+          保存
+        </button>
+        <button class="btn submit" :disabled="isBodyReadOnly" @click="submit">
+          申請
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { computed, ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
 import { fetchScoutDetail, updateScout } from "../../api/scoutApi";
@@ -49,9 +65,20 @@ const scout = ref({
 });
 
 const latestRejectComment = ref(null);
+const rejecterDisplay = ref("");
 const loading = ref(true);
 const ngWords = ref([]);
 const maxLength = ref(Infinity);
+const nonEditableStatuses = new Set([
+  "PENDING_APPROVER",
+  "PENDING_ADMIN",
+  "AVAILABLE",
+]);
+
+const isBodyReadOnly = computed(() => {
+  const status = String(scout.value?.status ?? "").trim();
+  return nonEditableStatuses.has(status);
+});
 
 function normalizeText(value) {
   return String(value ?? "").toLowerCase();
@@ -92,6 +119,19 @@ onMounted(async () => {
     // 最新差戻しコメント
     latestRejectComment.value = res.latestRejectComment;
 
+    const scoutRecord = res?.scout && typeof res.scout === "object" ? res.scout : {};
+    const returnedByEmployeeId = String(
+      scoutRecord["returned_by_employee_id"] ?? "",
+    ).trim();
+    const returnedByName = String(scoutRecord["returned_by_name"] ?? "").trim();
+    const returnedByPositionName = String(
+      scoutRecord["returned_by_position_name"] ?? "",
+    ).trim();
+
+    rejecterDisplay.value = returnedByEmployeeId && returnedByName
+      ? `${returnedByName}(${returnedByPositionName || "-"})`
+      : "";
+
     // ここでテキストエリアに反映
     scout.value.body = res.scout.body;
 
@@ -108,6 +148,11 @@ onMounted(async () => {
  * → status: DRAFT
  */
 const saveDraft = async () => {
+  if (isBodyReadOnly.value) {
+    alert("このステータスでは編集できません");
+    return;
+  }
+
   await updateScout({
     id: scout.value.id,
     body: scout.value.body,
@@ -123,6 +168,11 @@ const saveDraft = async () => {
  * → バリデーション → OKなら承認待ち
  */
 const submit = async () => {
+  if (isBodyReadOnly.value) {
+    alert("このステータスでは編集できません");
+    return;
+  }
+
   // バリデーションチェック（図の分岐）
   const body = String(scout.value.body ?? "");
 
@@ -288,6 +338,12 @@ const submit = async () => {
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial,
     sans-serif;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* 保存ボタン */

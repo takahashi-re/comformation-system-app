@@ -18,12 +18,19 @@ import ScoutList from "../views/scout/ScoutList.vue";
 import ApprovalDetail from "../views/approval/ApprovalDetail.vue";
 import Dashboard from "../views/dashboard/Dashboard.vue";
 import AIConfig from "../views/setting/AIConfig.vue";
+import { fetchScoutDetail } from "../api/scoutApi";
 import { useLoginStore } from "../store/login.Store";
 
 const getHomePath = () => "/dashboard";
 
 const DEFAULT_ALLOWED_POSITION_IDS = [1, 2, 3];
 //1=営業、2=営業承認者、3 = 管理者
+const NON_EDITABLE_SCOUT_STATUSES = new Set([
+  "PENDING_APPROVER",
+  "PENDING_ADMIN",
+  "AVAILABLE",
+]);
+
 
 const routes: RouteRecordRaw[] = [
   {
@@ -174,5 +181,39 @@ router.beforeEach(async (to: RouteLocationNormalized) => {
       query: { message: "権限がありません" },
     };
   }
+
+  if (to.name === "scout-edit") {
+    const rawId = Array.isArray(to.params.id) ? to.params.id[0] : to.params.id;
+    const id = Number(rawId);
+    const loginEmployeeId = String(loginStore.user?.employee_id ?? "").trim();
+
+    if (Number.isFinite(id)) {
+      try {
+        const { scout } = await fetchScoutDetail(id);
+        const status = String(scout?.status ?? "").trim();
+        const scoutRecord = scout as unknown as Record<string, unknown>;
+
+        if (userPositionId === 1) {
+          const createdByEmployeeId = String(
+            scoutRecord["created_by_employee_id"] ?? scoutRecord["creator"] ?? "",
+          ).trim();
+
+          if (!loginEmployeeId || !createdByEmployeeId || loginEmployeeId !== createdByEmployeeId) {
+            return {
+              path: "/forbidden",
+              query: { message: "作成者本人のみ編集できます" },
+            };
+          }
+        }
+
+        if (NON_EDITABLE_SCOUT_STATUSES.has(status)) {
+          return `/scout/${id}`;
+        }
+      } catch (error) {
+        console.error("スカウト編集可否の確認に失敗しました", error);
+      }
+    }
+  }
+
   return true;
 });
