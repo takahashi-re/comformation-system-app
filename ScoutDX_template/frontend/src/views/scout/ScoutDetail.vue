@@ -111,12 +111,11 @@ onMounted(async () => {
     const candidateInfo = [
       `年齢: ${scout.candidate_age ?? '-'}`,
       `性別: ${toGenderLabel(scout.candidate_gender)}`,
-      `希望職種: ${toDisplayValue(scout.candidate_desired_position)}`,
     ].join(' / ')
 
     const jobInfo = [
       `会社名: ${toDisplayValue(scout.company_name)}`,
-      `職種名: ${toDisplayValue(scout.job_title)}`,
+      `職種: ${toDisplayValue(scout.job_types)}`,
       `仕事内容: ${toDisplayValue(scout.job_description)}`,
       `最低年収: ${scout.min_salary ?? '-'}`,
       `最高年収: ${scout.max_salary ?? '-'}`,
