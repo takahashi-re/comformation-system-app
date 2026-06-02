@@ -194,6 +194,9 @@ export class ScoutService {
       job_title: row.job_title ?? "",
       job_seeker_age: row.job_seeker_age ?? undefined,
       job_seeker_gender: row.job_seeker_gender ?? undefined,
+      updated_by_name: row.updated_by_name ?? "",
+      returned_by_name: row.returned_by_name ?? "",
+      reviewer_name: row.reviewer_name ?? "",
     })) as ScoutEntity[];
   }
 

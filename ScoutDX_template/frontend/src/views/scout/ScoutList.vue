@@ -49,7 +49,11 @@
             </label>
           </div>
 
-          <div class="filter-group">
+          <button class="toggle-advanced" @click="showAdvancedFilters = !showAdvancedFilters">
+            {{ showAdvancedFilters ? '詳細検索を閉じる' : '詳細検索' }}
+          </button>
+
+          <div v-if="showAdvancedFilters" class="filter-group">
             <div class="filter-group-title">会社名</div>
             <label
               v-for="company in companies"
@@ -65,7 +69,7 @@
             </label>
           </div>
 
-          <div class="filter-group">
+          <div v-if="showAdvancedFilters" class="filter-group">
             <div class="filter-group-title">職種</div>
             <label v-for="job in jobs" :key="job" class="filter-check">
               <input type="checkbox" :value="job" v-model="filterJobs" />
@@ -73,7 +77,7 @@
             </label>
           </div>
 
-          <div class="filter-group">
+          <div v-if="showAdvancedFilters" class="filter-group">
             <div class="filter-group-title">求職者 性別</div>
             <label v-for="gender in genderOptions" :key="gender" class="filter-check">
               <input type="checkbox" :value="gender" v-model="filterGenders" />
@@ -81,7 +85,7 @@
             </label>
           </div>
 
-          <div class="filter-group">
+          <div v-if="showAdvancedFilters" class="filter-group">
             <div class="filter-group-title">求職者 年代</div>
             <label v-for="ageGroup in ageGroupOptions" :key="ageGroup" class="filter-check">
               <input type="checkbox" :value="ageGroup" v-model="filterAgeGroups" />
@@ -89,8 +93,8 @@
             </label>
           </div>
 
-          <div class="filter-group">
-            <div class="filter-group-title">最終更新日</div>
+          <div v-if="showAdvancedFilters" class="filter-group">
+            <div class="filter-group-title">最終更新日からの経過日数</div>
             <div class="filter-check" style="align-items: center; gap: 6px;">
               <input
                 type="number"
@@ -100,7 +104,7 @@
                 placeholder="n 日"
                 style="width: 96px;"
               />
-              以上
+              日以上
             </div>
           </div>
 
@@ -127,6 +131,26 @@
           <label>
             <input type="checkbox" value="status" v-model="selectedColumns" />
             ステータス
+          </label>
+
+          <label>
+            <input type="checkbox" value="reviewer" v-model="selectedColumns" />
+            最新承認/差戻し者
+          </label>
+
+          <label>
+            <input type="checkbox" value="age" v-model="selectedColumns" />
+            年齢
+          </label>
+
+          <label>
+            <input type="checkbox" value="gender" v-model="selectedColumns" />
+            性別
+          </label>
+
+          <label>
+            <input type="checkbox" value="updatedAt" v-model="selectedColumns" />
+            最終更新日
           </label>
 
           <hr />
@@ -187,7 +211,8 @@ export default {
       filterGenders: [],
       filterAgeGroups: [],
       updatedDays: '',
-      selectedColumns: ["company", "job", "status"],
+      showAdvancedFilters: false,
+      selectedColumns: ["company", "job", "status", "reviewer"],
       scouts: [],
     };
   },
@@ -291,12 +316,14 @@ export default {
         const rows = await fetchScouts();
         this.scouts = rows.map((row) => ({
           id: row.id,
+          creator: row.creator || '',
           company: row.company_name || "-",
           job: row.job_title || "-",
           status: row.status,
           statusLabel: STATUS_MAP[row.status] || "-",
           job_seeker_age: row.job_seeker_age ?? null,
           job_seeker_gender: row.job_seeker_gender ?? '',
+          reviewerName: row.reviewer_name || row.returned_by_name || row.updated_by_name || '-',
           updatedAt: row.updatedAt ?? row.updated_at ?? '',
         }));
       } catch (e) {
@@ -318,8 +345,35 @@ export default {
       if (this.selectedColumns.includes("status")) {
         parts.push(`ステータス：${scout.statusLabel}`);
       }
+      if (this.selectedColumns.includes("reviewer")) {
+        parts.push(`最新承認/差戻し者：${scout.reviewerName || '-'}`);
+      }
+      if (this.selectedColumns.includes("age")) {
+        parts.push(`年齢：${this.formatAge(scout.job_seeker_age)}`);
+      }
+      if (this.selectedColumns.includes("gender")) {
+        parts.push(`性別：${this.toGenderLabel(scout.job_seeker_gender)}`);
+      }
+      if (this.selectedColumns.includes("updatedAt")) {
+        parts.push(`最終更新日：${this.formatDate(scout.updatedAt)}`);
+      }
 
       return parts.join("、");
+    },
+
+    formatAge(age) {
+      const n = Number(age);
+      if (!Number.isFinite(n) || n <= 0) return '-';
+      return `${n}歳`;
+    },
+
+    formatDate(value) {
+      const date = new Date(value);
+      if (!date || Number.isNaN(date.getTime())) return '-';
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}/${m}/${d}`;
     },
 
     toGenderLabel(gender) {
@@ -392,7 +446,15 @@ export default {
     },
 
     selectAll() {
-      this.selectedColumns = ["company", "job", "status"];
+      this.selectedColumns = [
+        "company",
+        "job",
+        "status",
+        "reviewer",
+        "age",
+        "gender",
+        "updatedAt",
+      ];
     },
 
     clearAll() {
@@ -431,6 +493,13 @@ export default {
       this.filterGenders = toList(this.$route.query.genders);
       this.filterAgeGroups = toList(this.$route.query.ageGroups);
       this.updatedDays = String(this.$route.query.updatedDays || '');
+
+      this.showAdvancedFilters =
+        this.filterCompanies.length > 0 ||
+        this.filterJobs.length > 0 ||
+        this.filterGenders.length > 0 ||
+        this.filterAgeGroups.length > 0 ||
+        this.updatedDays !== '';
     },
   },
 };
@@ -684,6 +753,11 @@ export default {
 .box-body > button:only-of-type,
 .box-body > button:last-of-type {
   margin-right: 0;
+}
+
+.toggle-advanced {
+  width: 100%;
+  margin-bottom: 16px;
 }
 
 .sidebar > div:last-child {

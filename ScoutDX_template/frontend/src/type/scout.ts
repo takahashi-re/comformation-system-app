@@ -11,6 +11,9 @@ export interface ScoutEntity {
   job_title?: string
   job_seeker_age?: number | null
   job_seeker_gender?: string | null
+  updated_by_name?: string
+  returned_by_name?: string
+  reviewer_name?: string
 }
 
 export interface GeneratedScoutSample {

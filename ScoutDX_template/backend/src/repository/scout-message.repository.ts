@@ -20,6 +20,9 @@ export interface ScoutMessageWithRelationsRow extends ScoutMessageRow {
   job_seeker_age: number | null;
   job_seeker_gender: string | null;
   desired_position: string | null;
+  updated_by_name: string | null;
+  returned_by_name: string | null;
+  reviewer_name: string | null;
 }
 
 export interface RejectScoutMessageInput {
@@ -328,10 +331,25 @@ export class ScoutMessageRepository {
           jp.job_title,
           js.age AS job_seeker_age,
           js.gender AS job_seeker_gender,
-          js.desired_position
+          js.desired_position,
+          COALESCE(updated_emp.name, '') AS updated_by_name,
+          COALESCE(returned_emp.name, '') AS returned_by_name,
+          COALESCE(returned_emp.name, updated_emp.name, '') AS reviewer_name
         FROM SCOUT_MESSAGES sm
         LEFT JOIN JOB_POSTINGS jp ON jp.job_posting_id = sm.job_posting_id
         LEFT JOIN JOB_SEEKERS js ON js.job_seeker_id = sm.job_seeker_id
+        LEFT JOIN EMPLOYEES updated_emp
+          ON updated_emp.employee_id = sm.updated_by_employee_id
+        LEFT JOIN LATERAL (
+          SELECT
+            h.returned_by_employee_id
+          FROM SCOUT_MESSAGE_HISTORIES h
+          WHERE h.scout_message_id = sm.scout_message_id
+          ORDER BY h.returned_at DESC NULLS LAST, h.scout_message_history_id DESC
+          LIMIT 1
+        ) latest_history ON TRUE
+        LEFT JOIN EMPLOYEES returned_emp
+          ON returned_emp.employee_id = latest_history.returned_by_employee_id
         WHERE sm.status IS NOT NULL
           AND ($1::boolean = false OR sm.scout_message_id = $2)
         ORDER BY sm.created_at DESC NULLS LAST, sm.scout_message_id DESC

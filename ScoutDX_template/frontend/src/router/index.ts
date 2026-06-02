@@ -63,7 +63,7 @@ const routes: RouteRecordRaw[] = [
     path: "/scout/:id/edit",
     name: "scout-edit",
     component: ScoutEdit,
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, allowedPositionIds: [1] },
   },
   {
     path: "/scout/list",
@@ -79,14 +79,22 @@ const routes: RouteRecordRaw[] = [
     path: "/review/:id",
     name: "review-detail",
     component: ApprovalDetail,
-    meta: { requiresAuth: true, roles: ["approver", "admin"] },
+    meta: {
+      requiresAuth: true,
+      roles: ["approver", "admin"],
+      allowedPositionIds: [2, 3],
+    },
   },
   {
     // AI設定画面（NGワード・最大文字数設定）
     path: "/conditions",
     name: "conditions",
     component: AIConfig,
-    meta: { requiresAuth: true, roles: ["approver", "admin"] },
+    meta: {
+      requiresAuth: true,
+      roles: ["approver", "admin"],
+      allowedPositionIds: [2, 3],
+    },
   },
   {
     path: "/admin/users",
@@ -116,12 +124,6 @@ const routes: RouteRecordRaw[] = [
     path: "/auth/change-password",
     name: "change-password",
     component: ChangePassword,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: "/approval/:id",
-    name: "approval-detail",
-    component: ApprovalDetail,
     meta: { requiresAuth: true },
   },
 ];

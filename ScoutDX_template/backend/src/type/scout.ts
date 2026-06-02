@@ -19,4 +19,8 @@ export class ScoutEntity {
 
   @Column({ name: 'status', type: 'varchar', length: 20, default: 'DRAFT' })
   status: string;
+
+  updated_by_name?: string;
+  returned_by_name?: string;
+  reviewer_name?: string;
 }
