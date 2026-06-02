@@ -34,6 +34,18 @@
           {{ latestRejectComment }}
         </div>
         <div class="comment-box" v-else>差戻しコメントはありません</div>
+        <div class="genre-list" v-if="selectedGenres.length" style="padding:12px; border-top:1px solid #e5e7eb">
+  <div style="font-size:13px; color:#94a3b8; margin-bottom:8px">返却ジャンル</div>
+  <div>
+    <span
+      v-for="g in selectedGenres"
+      :key="g.genre_id"
+      style="display:inline-block; margin:4px 6px; padding:6px 10px; background:#eef2ff; color:#1f2937; border-radius:999px; font-size:13px"
+    >
+      {{ g.genre_name }}
+    </span>
+  </div>
+</div>
       </div>
       <div class="actions">
         <button class="btn save" :disabled="isBodyReadOnly" @click="saveDraft">
@@ -53,6 +65,7 @@ import { useRoute, useRouter } from "vue-router";
 import axios from "axios";
 import { fetchScoutDetail, updateScout } from "../../api/scoutApi";
 import { fetchAIConfig } from "../../api/aiConfigApi";
+import { fetchAllGenres } from "../../api/genreApi";
 
 const route = useRoute();
 const router = useRouter();
@@ -69,6 +82,8 @@ const rejecterDisplay = ref("");
 const loading = ref(true);
 const ngWords = ref([]);
 const maxLength = ref(Infinity);
+const genres = ref([]);
+const selectedGenres = ref([]);
 const nonEditableStatuses = new Set([
   "PENDING_APPROVER",
   "PENDING_ADMIN",
@@ -138,7 +153,20 @@ onMounted(async () => {
     ngWords.value = Array.isArray(config?.ngWords) ? config.ngWords : [];
     maxLength.value =
       Number(config?.maxLength) > 0 ? Number(config.maxLength) : 100;
-  } finally {
+  
+  // 差戻しジャンルを取得してレスポンスの latestRejectGenreIds と突合
+
+  const fetchedGenres = await fetchAllGenres();
+  genres.value = Array.isArray(fetchedGenres) ? fetchedGenres : [];
+
+  const genreIds = Array.isArray(res.latestRejectGenreIds) ? res.latestRejectGenreIds : [];
+  selectedGenres.value = genres.value.filter((g) => genreIds.includes(g.genre_id));
+
+  // デバッグ（必要なら有効化）
+  console.log("res:", res, "fetchedGenres:", fetchedGenres, "selectedGenres:", selectedGenres.value);
+} catch (e) {
+  console.error("ジャンル取得失敗", e);
+} finally {
     loading.value = false;
   }
 });
