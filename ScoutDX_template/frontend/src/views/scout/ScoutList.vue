@@ -19,6 +19,7 @@
             :key="scout.id"
             :scout="scout"
             :role="role"
+            :current-user-id="loginStore.user?.employee_id || ''"
             :selected-columns="selectedColumns"
             :row-class="getRowClass(scout.statusLabel)"
             @detail="goDetail"
@@ -131,6 +132,11 @@
           <label>
             <input type="checkbox" value="status" v-model="selectedColumns" />
             ステータス
+          </label>
+
+          <label>
+            <input type="checkbox" value="creator" v-model="selectedColumns" />
+            制作者
           </label>
 
           <label>
@@ -450,6 +456,7 @@ export default {
         "company",
         "job",
         "status",
+        "creator",
         "reviewer",
         "age",
         "gender",
