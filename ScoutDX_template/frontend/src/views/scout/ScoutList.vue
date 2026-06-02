@@ -197,7 +197,10 @@
         </div>
       </div>
 
-      <div v-if="role === 'admin'" style="margin-top: 20px; text-align: center">
+      <div
+        v-if="role === 'admin' || role === 'approver'"
+        style="margin-top: 20px; text-align: center"
+      >
         <button class="create-btn" @click="goConditions">生成文条件編集</button>
       </div>
     </div>
