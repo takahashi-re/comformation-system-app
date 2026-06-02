@@ -113,7 +113,10 @@ export class ScoutService {
     const genres =
       await this.returnCommentGenreRepository.findAllGenresWithPositions();
     const existing = genres.find(
-      (genre) => genre.genre_name === normalizedName,
+      (genre) =>
+        String(genre.genre_name ?? "")
+          .trim()
+          .toLowerCase() === normalizedName.toLowerCase(),
     );
     const genreId = existing
       ? Number(existing.genre_id)
@@ -385,12 +388,11 @@ export class ScoutService {
       throw new BadRequestException("管理者差戻し時は再申請先の指定が必要です");
     }
 
-    const nextStatus =
-      !isAdmin
-        ? "REJECTED_BY_APPROVER"
-        : dto.reapplyTarget === "APPROVER"
-          ? "REJECTED_BY_ADMIN_TO_APPROVER"
-          : "REJECTED_BY_ADMIN_TO_ADMIN";
+    const nextStatus = !isAdmin
+      ? "REJECTED_BY_APPROVER"
+      : dto.reapplyTarget === "APPROVER"
+        ? "REJECTED_BY_ADMIN_TO_APPROVER"
+        : "REJECTED_BY_ADMIN_TO_ADMIN";
 
     const genreIds = await this.resolveGenreIdsFromReasonKeys(dto.reasonKeys);
 
