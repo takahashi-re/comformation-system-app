@@ -1,0 +1,777 @@
+From f16e2ad3b333ffe013a1b8018fac2903a6981fc3 Mon Sep 17 00:00:00 2001
+From: rtakahashi7074-hub <rtakahashi7074@gmail.com>
+Date: Tue, 2 Jun 2026 22:47:13 +0900
+Subject: [PATCH] =?UTF-8?q?fix:=20=E3=82=B9=E3=82=AB=E3=82=A6=E3=83=88?=
+ =?UTF-8?q?=E3=83=A1=E3=83=83=E3=82=BB=E3=83=BC=E3=82=B8=E4=BF=9D=E5=AD=98?=
+ =?UTF-8?q?=E6=99=82=E3=81=AEID=E9=87=8D=E8=A4=87=E3=82=A8=E3=83=A9?=
+ =?UTF-8?q?=E3=83=BC=E3=82=92=E4=BF=AE=E6=AD=A3=EF=BC=88=E3=82=B7=E3=83=BC?=
+ =?UTF-8?q?=E3=82=B1=E3=83=B3=E3=82=B9=E5=90=8C=E6=9C=9F=E8=BF=BD=E5=8A=A0?=
+ =?UTF-8?q?=EF=BC=89?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+---
+ .../src/repository/job-posting.repository.ts  | 126 +-----------------
+ .../src/repository/job-seeker.repository.ts   |   9 +-
+ .../src/repository/job-type.repository.ts     |  15 +++
+ .../repository/scout-message.repository.ts    |  42 ++++--
+ .../src/service/ai-generate.service.ts        |  17 +--
+ .../backend/src/service/scout.service.ts      |   2 +-
+ ScoutDX_template/db/init.sql                  |   2 -
+ ScoutDX_template/db/test_data.sql             |  37 ++---
+ ScoutDX_template/frontend/src/api/aiApi.ts    |   7 -
+ ScoutDX_template/frontend/src/type/scout.ts   |   2 +-
+ .../frontend/src/views/scout/ScoutCreate.vue  |   4 +-
+ .../frontend/src/views/scout/ScoutDetail.vue  |   3 +-
+ .../frontend/src/views/scout/ScoutList.vue    |   9 +-
+ 13 files changed, 78 insertions(+), 197 deletions(-)
+ delete mode 100644 ScoutDX_template/frontend/src/api/aiApi.ts
+
+diff --git a/ScoutDX_template/backend/src/repository/job-posting.repository.ts b/ScoutDX_template/backend/src/repository/job-posting.repository.ts
+index 6999310..676b03d 100644
+--- a/ScoutDX_template/backend/src/repository/job-posting.repository.ts
++++ b/ScoutDX_template/backend/src/repository/job-posting.repository.ts
+@@ -4,7 +4,6 @@ import { DataSource } from "typeorm";
+ export interface JobPostingRow {
+   job_posting_id: number;
+   company_name: string;
+-  job_title: string;
+   job_description: string | null;
+   min_salary: number | null;
+   max_salary: number | null;
+@@ -15,7 +14,6 @@ export interface JobPostingRow {
+ 
+ export interface CreateJobPostingInput {
+   company_name: string;
+-  job_title: string;
+   job_description?: string | null;
+   min_salary?: number | null;
+   max_salary?: number | null;
+@@ -60,7 +58,6 @@ export class JobPostingRepository {
+       `
+         INSERT INTO JOB_POSTINGS (
+           company_name,
+-          job_title,
+           job_description,
+           min_salary,
+           max_salary,
+@@ -68,11 +65,10 @@ export class JobPostingRepository {
+           job_appeal,
+           work_location
+         )
+-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
++        VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING
+           job_posting_id,
+           company_name,
+-          job_title,
+           job_description,
+           min_salary,
+           max_salary,
+@@ -82,7 +78,6 @@ export class JobPostingRepository {
+       `,
+       [
+         input.company_name,
+-        input.job_title,
+         input.job_description ?? null,
+         input.min_salary ?? null,
+         input.max_salary ?? null,
+@@ -100,7 +95,6 @@ export class JobPostingRepository {
+       SELECT
+         job_posting_id,
+         company_name,
+-        job_title,
+         job_description,
+         min_salary,
+         max_salary,
+@@ -118,7 +112,6 @@ export class JobPostingRepository {
+         SELECT
+           job_posting_id,
+           company_name,
+-          job_title,
+           job_description,
+           min_salary,
+           max_salary,
+@@ -139,106 +132,9 @@ export class JobPostingRepository {
+     return rows[0];
+   }
+ 
+-  async findByTitle(jobTitle: string): Promise<JobPostingRow | null> {
+-    if (!jobTitle) return null;
+-    const rows = await this.dataSource.query(
+-      `
+-        SELECT
+-          job_posting_id,
+-          company_name,
+-          job_title,
+-          job_description,
+-          min_salary,
+-          max_salary,
+-          required_skills,
+-          job_appeal,
+-          work_location
+-        FROM JOB_POSTINGS
+-        WHERE LOWER(TRIM(job_title)) = LOWER(TRIM($1))
+-        LIMIT 1
+-      `,
+-      [jobTitle],
+-    );
+-    return rows[0] ?? null;
+-  }
+ 
+-  async createOrFindByTitle(
+-    input: CreateJobPostingInput,
+-  ): Promise<JobPostingRow> {
+-    // 既存検索
+-    const existing = await this.findByTitle(input.job_title);
+-    if (existing) return existing;
+ 
+-    // 新規挿入（競合が起きたら既存を返す）
+-    try {
+-      await this.syncPrimaryKeySequence();
+-      const rows = await this.dataSource.query(
+-        `
+-          INSERT INTO JOB_POSTINGS (
+-            company_name,
+-            job_title,
+-            job_description,
+-            min_salary,
+-            max_salary,
+-            required_skills,
+-            job_appeal,
+-            work_location
+-          )
+-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+-          RETURNING
+-            job_posting_id,
+-            company_name,
+-            job_title,
+-            job_description,
+-            min_salary,
+-            max_salary,
+-            required_skills,
+-            job_appeal,
+-            work_location
+-        `,
+-        [
+-          input.company_name,
+-          input.job_title,
+-          input.job_description ?? null,
+-          input.min_salary ?? null,
+-          input.max_salary ?? null,
+-          input.required_skills ?? null,
+-          input.job_appeal ?? null,
+-          input.work_location ?? null,
+-        ],
+-      );
+-      return rows[0];
+-    } catch (err: any) {
+-      // Postgres の一意制約違反コード 23505 を検知したら既存を返す
+-      if (err?.code === "23505") {
+-        const found = await this.findByTitle(input.job_title);
+-        if (found) return found;
+-      }
+-      throw err;
+-    }
+-  }
+ 
+-  async findJobTypeByName(
+-    name: string,
+-  ): Promise<{ job_type_id: number; job_type_name: string } | null> {
+-    if (!name?.trim()) return null;
+-    const rows = await this.dataSource.query(
+-      `SELECT job_type_id, job_type_name FROM JOB_TYPES WHERE LOWER(TRIM(job_type_name)) = LOWER(TRIM($1)) LIMIT 1`,
+-      [name],
+-    );
+-    return rows[0] ?? null;
+-  }
+-
+-  async createJobType(
+-    name: string,
+-  ): Promise<{ job_type_id: number; job_type_name: string }> {
+-    await this.syncJobTypesSequence();
+-    const rows = await this.dataSource.query(
+-      `INSERT INTO JOB_TYPES (job_type_name) VALUES ($1) RETURNING job_type_id, job_type_name`,
+-      [name],
+-    );
+-    return rows[0];
+-  }
+ 
+   async linkJobPostingToJobType(
+     jobPostingId: number,
+@@ -249,24 +145,4 @@ export class JobPostingRepository {
+       [jobPostingId, jobTypeId],
+     );
+   }
+-
+-  async linkJobPostingToTitle(
+-    jobPostingId: number,
+-    title: string,
+-  ): Promise<void> {
+-    const name = title?.trim();
+-    if (!name) return;
+-    let jt = await this.findJobTypeByName(name);
+-    if (!jt) {
+-      // 存在しなければ作成して取得（衝突は稀だが再取得して安全側に）
+-      try {
+-        jt = await this.createJobType(name);
+-      } catch (err: any) {
+-        // 同名が別プロセスで作成された可能性 -> 再取得
+-        jt = await this.findJobTypeByName(name);
+-        if (!jt) throw err;
+-      }
+-    }
+-    await this.linkJobPostingToJobType(jobPostingId, Number(jt.job_type_id));
+-  }
+ }
+diff --git a/ScoutDX_template/backend/src/repository/job-seeker.repository.ts b/ScoutDX_template/backend/src/repository/job-seeker.repository.ts
+index 0974692..1327664 100644
+--- a/ScoutDX_template/backend/src/repository/job-seeker.repository.ts
++++ b/ScoutDX_template/backend/src/repository/job-seeker.repository.ts
+@@ -5,7 +5,6 @@ export interface JobSeekerRow {
+   job_seeker_id: number;
+   age: number;
+   gender: string;
+-  desired_position: string | null;
+   created_at: string | null;
+   updated_at: string | null;
+ }
+@@ -13,7 +12,6 @@ export interface JobSeekerRow {
+ export interface CreateJobSeekerInput {
+   age: number;
+   gender: string;
+-  desired_position?: string | null;
+ }
+ 
+ @Injectable()
+@@ -38,20 +36,18 @@ export class JobSeekerRepository {
+         INSERT INTO JOB_SEEKERS (
+           age,
+           gender,
+-          desired_position,
+           created_at,
+           updated_at
+         )
+-        VALUES ($1, $2, $3, NOW(), NOW())
++        VALUES ($1, $2, NOW(), NOW())
+         RETURNING
+           job_seeker_id,
+           age,
+           gender,
+-          desired_position,
+           created_at,
+           updated_at
+       `,
+-      [input.age, input.gender, input.desired_position ?? null],
++      [input.age, input.gender],
+     );
+ 
+     return rows[0];
+@@ -64,7 +60,6 @@ export class JobSeekerRepository {
+           job_seeker_id,
+           age,
+           gender,
+-          desired_position,
+           created_at,
+           updated_at
+         FROM JOB_SEEKERS
+diff --git a/ScoutDX_template/backend/src/repository/job-type.repository.ts b/ScoutDX_template/backend/src/repository/job-type.repository.ts
+index 8f3a002..98d1530 100644
+--- a/ScoutDX_template/backend/src/repository/job-type.repository.ts
++++ b/ScoutDX_template/backend/src/repository/job-type.repository.ts
+@@ -30,6 +30,7 @@ export class JobTypeRepository {
+   }
+ 
+   async create(name: string): Promise<JobTypeRow> {
++    await this.syncPrimaryKeySequence();
+     const rows = await this.dataSource.query(
+       `INSERT INTO JOB_TYPES (job_type_name) VALUES ($1) RETURNING job_type_id, job_type_name`,
+       [name],
+@@ -59,10 +60,24 @@ export class JobTypeRepository {
+     );
+   }
+ 
++  async linkJobSeeker(jobSeekerId: number, jobTypeId: number): Promise<void> {
++    await this.dataSource.query(
++      `INSERT INTO JOB_SEEKER_JOB_TYPES (job_seeker_id, job_type_id) VALUES ($1, $2) ON CONFLICT (job_seeker_id, job_type_id) DO NOTHING`,
++      [jobSeekerId, jobTypeId],
++    );
++  }
++
+   async linkMultipleToJobPosting(jobPostingId: number, names: string[]): Promise<void> {
+     for (const n of names) {
+       const jt = await this.findOrCreateByName(n.trim());
+       await this.linkJobPosting(jobPostingId, Number(jt.job_type_id));
+     }
+   }
++
++  async linkMultipleToJobSeeker(jobSeekerId: number, names: string[]): Promise<void> {
++    for (const n of names) {
++      const jt = await this.findOrCreateByName(n.trim());
++      await this.linkJobSeeker(jobSeekerId, Number(jt.job_type_id));
++    }
++  }
+ }
+\ No newline at end of file
+diff --git a/ScoutDX_template/backend/src/repository/scout-message.repository.ts b/ScoutDX_template/backend/src/repository/scout-message.repository.ts
+index d933415..a0d2ebd 100644
+--- a/ScoutDX_template/backend/src/repository/scout-message.repository.ts
++++ b/ScoutDX_template/backend/src/repository/scout-message.repository.ts
+@@ -16,10 +16,9 @@ export interface ScoutMessageRow {
+ 
+ export interface ScoutMessageWithRelationsRow extends ScoutMessageRow {
+   company_name: string | null;
+-  job_title: string | null;
++  job_types: string | null;
+   job_seeker_age: number | null;
+   job_seeker_gender: string | null;
+-  desired_position: string | null;
+   updated_by_name: string | null;
+   returned_by_name: string | null;
+   reviewer_name: string | null;
+@@ -75,10 +74,13 @@ export class ScoutMessageRepository {
+           COALESCE(sm.message_content, '') AS body,
+           COALESCE(sm.status, 'DRAFT') AS status,
+           COALESCE(jp.company_name, '') AS company_name,
+-          COALESCE(jp.job_title, '') AS job_title
++          COALESCE(STRING_AGG(DISTINCT jt.job_type_name, ', '), '') AS job_types
+         FROM SCOUT_MESSAGES sm
+         LEFT JOIN JOB_POSTINGS jp ON jp.job_posting_id = sm.job_posting_id
+-        ORDER BY sm.created_at DESC NULLS LAST, sm.scout_message_id DESC
++        LEFT JOIN JOB_POSTING_JOB_TYPES jpjt ON jpjt.job_posting_id = jp.job_posting_id
++        LEFT JOIN JOB_TYPES jt ON jt.job_type_id = jpjt.job_type_id
++        GROUP BY sm.scout_message_id, sm.created_at, sm.created_by_employee_id, sm.message_content, sm.status, jp.company_name
++        ORDER BY sm.updated_at DESC NULLS LAST, sm.scout_message_id DESC
+       `,
+     );
+   }
+@@ -125,9 +127,9 @@ export class ScoutMessageRepository {
+           sm.job_posting_id,
+           js.age AS candidate_age,
+           COALESCE(js.gender, '') AS candidate_gender,
+-          COALESCE(js.desired_position, '') AS candidate_desired_position,
++          COALESCE(STRING_AGG(DISTINCT sjt.job_type_name, ', '), '') AS candidate_desired_job_types,
+           COALESCE(jp.company_name, '') AS company_name,
+-          COALESCE(jp.job_title, '') AS job_title,
++          COALESCE(STRING_AGG(DISTINCT jt.job_type_name, ', '), '') AS job_types,
+           COALESCE(jp.job_description, '') AS job_description,
+           jp.min_salary,
+           jp.max_salary,
+@@ -143,8 +145,12 @@ export class ScoutMessageRepository {
+           ON creator_emp.employee_id = sm.created_by_employee_id
+         LEFT JOIN JOB_SEEKERS js
+           ON js.job_seeker_id = sm.job_seeker_id
++        LEFT JOIN JOB_SEEKER_JOB_TYPES sjt_link ON sjt_link.job_seeker_id = js.job_seeker_id
++        LEFT JOIN JOB_TYPES sjt ON sjt.job_type_id = sjt_link.job_type_id
+         LEFT JOIN JOB_POSTINGS jp
+           ON jp.job_posting_id = sm.job_posting_id
++        LEFT JOIN JOB_POSTING_JOB_TYPES jpjt ON jpjt.job_posting_id = jp.job_posting_id
++        LEFT JOIN JOB_TYPES jt ON jt.job_type_id = jpjt.job_type_id
+         LEFT JOIN EMPLOYEES updated_emp
+           ON updated_emp.employee_id = sm.updated_by_employee_id
+         LEFT JOIN LATERAL (
+@@ -159,6 +165,7 @@ export class ScoutMessageRepository {
+         LEFT JOIN EMPLOYEES returned_emp
+           ON returned_emp.employee_id = latest_history.returned_by_employee_id
+         WHERE sm.scout_message_id = $1
++        GROUP BY sm.scout_message_id, sm.created_at, sm.created_by_employee_id, sm.message_content, sm.status, sm.job_posting_id, js.age, js.gender, jp.company_name, jp.job_posting_id, jp.job_description, jp.min_salary, jp.max_salary, jp.required_skills, jp.job_appeal, jp.work_location, creator_emp.name, updated_emp.name, returned_emp.name, latest_history.returned_by_employee_id, latest_history.return_comment
+         LIMIT 1
+       `,
+       [Number(id)],
+@@ -195,7 +202,7 @@ export class ScoutMessageRepository {
+           COALESCE(sm.message_content, '') AS scout_body,
+           sm.job_posting_id,
+           COALESCE(jp.company_name, '') AS company_name,
+-          COALESCE(jp.job_title, '') AS job_title,
++          COALESCE(STRING_AGG(DISTINCT jt.job_type_name, ', '), '') AS job_types,
+           COALESCE(jp.job_description, '') AS job_description,
+           jp.min_salary,
+           jp.max_salary,
+@@ -204,7 +211,10 @@ export class ScoutMessageRepository {
+           COALESCE(jp.work_location, '') AS work_location
+         FROM SCOUT_MESSAGES sm
+         LEFT JOIN JOB_POSTINGS jp ON jp.job_posting_id = sm.job_posting_id
++        LEFT JOIN JOB_POSTING_JOB_TYPES jpjt ON jpjt.job_posting_id = jp.job_posting_id
++        LEFT JOIN JOB_TYPES jt ON jt.job_type_id = jpjt.job_type_id
+         WHERE sm.scout_message_id = $1
++        GROUP BY sm.scout_message_id, jp.job_posting_id, jp.company_name, jp.job_posting_id, jp.job_description, jp.min_salary, jp.max_salary, jp.required_skills, jp.job_appeal, jp.work_location, sm.message_content
+         LIMIT 1
+       `,
+       [Number(id)],
+@@ -236,7 +246,7 @@ export class ScoutMessageRepository {
+       jobInfo: {
+         jobPostingId: scoutRow.job_posting_id,
+         companyName: scoutRow.company_name,
+-        jobTitle: scoutRow.job_title,
++        jobTitle: scoutRow.job_types,
+         jobDescription: scoutRow.job_description,
+         minSalary: scoutRow.min_salary,
+         maxSalary: scoutRow.max_salary,
+@@ -359,15 +369,16 @@ export class ScoutMessageRepository {
+           sm.created_at,
+           sm.updated_at,
+           jp.company_name,
+-          jp.job_title,
++          COALESCE(STRING_AGG(DISTINCT jt.job_type_name, ', '), '') AS job_types,
+           js.age AS job_seeker_age,
+           js.gender AS job_seeker_gender,
+-          js.desired_position,
+           COALESCE(updated_emp.name, '') AS updated_by_name,
+           COALESCE(returned_emp.name, '') AS returned_by_name,
+           COALESCE(returned_emp.name, updated_emp.name, '') AS reviewer_name
+         FROM SCOUT_MESSAGES sm
+         LEFT JOIN JOB_POSTINGS jp ON jp.job_posting_id = sm.job_posting_id
++        LEFT JOIN JOB_POSTING_JOB_TYPES jpjt ON jpjt.job_posting_id = jp.job_posting_id
++        LEFT JOIN JOB_TYPES jt ON jt.job_type_id = jpjt.job_type_id
+         LEFT JOIN JOB_SEEKERS js ON js.job_seeker_id = sm.job_seeker_id
+         LEFT JOIN EMPLOYEES updated_emp
+           ON updated_emp.employee_id = sm.updated_by_employee_id
+@@ -383,6 +394,7 @@ export class ScoutMessageRepository {
+           ON returned_emp.employee_id = latest_history.returned_by_employee_id
+         WHERE sm.status IS NOT NULL
+           AND ($1::boolean = false OR sm.scout_message_id = $2)
++        GROUP BY sm.scout_message_id, sm.message_content, sm.sent_at, sm.job_posting_id, sm.job_seeker_id, sm.created_by_employee_id, sm.updated_by_employee_id, sm.status, sm.created_at, sm.updated_at, jp.company_name, js.age, js.gender, updated_emp.name, returned_emp.name, latest_history.returned_by_employee_id
+         ORDER BY sm.created_at DESC NULLS LAST, sm.scout_message_id DESC
+       `,
+       [hasIdFilter, scoutMessageId ?? null],
+@@ -419,6 +431,8 @@ export class ScoutMessageRepository {
+       throw new Error("job_posting_id と job_seeker_id は必須です");
+     }
+ 
++    await this.syncPrimaryKeySequence();
++
+     const rows = await this.dataSource.query(
+       `
+         INSERT INTO SCOUT_MESSAGES (
+@@ -507,14 +521,16 @@ export class ScoutMessageRepository {
+           sm.created_at,
+           sm.updated_at,
+           jp.company_name,
+-          jp.job_title,
++          COALESCE(STRING_AGG(DISTINCT jt.job_type_name, ', '), '') AS job_types,
+           js.age AS job_seeker_age,
+-          js.gender AS job_seeker_gender,
+-          js.desired_position
++          js.gender AS job_seeker_gender
+         FROM SCOUT_MESSAGES sm
+         LEFT JOIN JOB_POSTINGS jp ON jp.job_posting_id = sm.job_posting_id
++        LEFT JOIN JOB_POSTING_JOB_TYPES jpjt ON jpjt.job_posting_id = jp.job_posting_id
++        LEFT JOIN JOB_TYPES jt ON jt.job_type_id = jpjt.job_type_id
+         LEFT JOIN JOB_SEEKERS js ON js.job_seeker_id = sm.job_seeker_id
+         WHERE sm.scout_message_id = $1
++        GROUP BY sm.scout_message_id, sm.message_content, sm.sent_at, sm.job_posting_id, sm.job_seeker_id, sm.created_by_employee_id, sm.updated_by_employee_id, sm.status, sm.created_at, sm.updated_at, jp.company_name, js.age, js.gender
+         LIMIT 1
+       `,
+       [scoutMessageId],
+diff --git a/ScoutDX_template/backend/src/service/ai-generate.service.ts b/ScoutDX_template/backend/src/service/ai-generate.service.ts
+index 37e7f04..81457d1 100644
+--- a/ScoutDX_template/backend/src/service/ai-generate.service.ts
++++ b/ScoutDX_template/backend/src/service/ai-generate.service.ts
+@@ -122,9 +122,8 @@ export class AiGenerateService {
+             "何卒ご検討のほどよろしくお願い申し上げます。",
+           ].join("\n");
+ 
+-    const jobPosting = await this.jobPostingRepository.createOrFindByTitle({
++    const jobPosting = await this.jobPostingRepository.create({
+       company_name: input.jobInfo.companyName.trim(),
+-      job_title: input.jobInfo.jobTitle.trim(),
+       job_description: input.jobInfo.businessContent.trim(),
+       min_salary: input.jobInfo.minSalary,
+       max_salary: input.jobInfo.maxSalary,
+@@ -136,7 +135,6 @@ export class AiGenerateService {
+     const jobSeeker = await this.jobSeekerRepository.create({
+       gender: input.applicantInfo.gender.trim(),
+       age: input.applicantInfo.age,
+-      desired_position: input.applicantInfo.desiredJobTitle?.trim() || null,
+     });
+ 
+     const scoutMessage = await this.scoutMessageRepository.create({
+@@ -154,11 +152,14 @@ export class AiGenerateService {
+       typeNames,
+     );
+ 
+-    // jobPosting を作成した直後に追加
+-    await this.jobPostingRepository.linkJobPostingToTitle(
+-      Number(jobPosting.job_posting_id),
+-      input.jobInfo.jobTitle.trim(),
+-    );
++    // Job Seeker の希望職種も同様にリンク
++    if (input.applicantInfo.desiredJobTitle?.trim()) {
++      const seekerTypeNames = [input.applicantInfo.desiredJobTitle.trim()];
++      await this.jobTypeRepository.linkMultipleToJobSeeker(
++        Number(jobSeeker.job_seeker_id),
++        seekerTypeNames,
++      );
++    }
+ 
+     return { body, scoutId: String(scoutMessage.scout_message_id) };
+   }
+diff --git a/ScoutDX_template/backend/src/service/scout.service.ts b/ScoutDX_template/backend/src/service/scout.service.ts
+index d5ea139..f767639 100644
+--- a/ScoutDX_template/backend/src/service/scout.service.ts
++++ b/ScoutDX_template/backend/src/service/scout.service.ts
+@@ -202,7 +202,7 @@ export class ScoutService {
+       body: row.message_content ?? "",
+       status: row.status ?? "",
+       company_name: row.company_name ?? "",
+-      job_title: row.job_title ?? "",
++      job_types: row.job_types ?? "",
+       job_seeker_age: row.job_seeker_age ?? undefined,
+       job_seeker_gender: row.job_seeker_gender ?? undefined,
+       updated_by_name: row.updated_by_name ?? "",
+diff --git a/ScoutDX_template/db/init.sql b/ScoutDX_template/db/init.sql
+index 6beeb26..6a0523f 100644
+--- a/ScoutDX_template/db/init.sql
++++ b/ScoutDX_template/db/init.sql
+@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS MAX_TEXT_LENGTH (
+ CREATE TABLE IF NOT EXISTS JOB_POSTINGS (
+   job_posting_id SERIAL PRIMARY KEY,
+   company_name VARCHAR(150) NOT NULL,
+-  job_title VARCHAR(140) NOT NULL,
+   job_description TEXT,
+   min_salary INTEGER,
+   max_salary INTEGER,
+@@ -45,7 +44,6 @@ CREATE TABLE IF NOT EXISTS JOB_SEEKERS (
+   job_seeker_id SERIAL PRIMARY KEY,
+   age INTEGER NOT NULL,
+   gender VARCHAR(20) NOT NULL,
+-  desired_position VARCHAR(100),
+   created_at TIMESTAMP,
+   updated_at TIMESTAMP
+ );
+diff --git a/ScoutDX_template/db/test_data.sql b/ScoutDX_template/db/test_data.sql
+index 07249a2..a36fa5e 100644
+--- a/ScoutDX_template/db/test_data.sql
++++ b/ScoutDX_template/db/test_data.sql
+@@ -97,7 +97,6 @@ ON CONFLICT (employee_id) DO NOTHING;
+ INSERT INTO JOB_POSTINGS (
+   job_posting_id,
+   company_name,
+-  job_title,
+   job_description,
+   min_salary,
+   max_salary,
+@@ -108,7 +107,6 @@ INSERT INTO JOB_POSTINGS (
+   (
+     1,
+     'Acme Tech',
+-    'Backend Engineer (Go)',
+     'Develop APIs and internal tools for B2B products.',
+     5000000,
+     8000000,
+@@ -119,7 +117,6 @@ INSERT INTO JOB_POSTINGS (
+   (
+     2,
+     'Blue Ocean Inc.',
+-    'Frontend Engineer (Vue)',
+     'Build and maintain customer-facing web applications.',
+     4500000,
+     7000000,
+@@ -132,7 +129,6 @@ ON CONFLICT (job_posting_id) DO NOTHING;
+ INSERT INTO JOB_POSTINGS (
+   job_posting_id,
+   company_name,
+-  job_title,
+   job_description,
+   min_salary,
+   max_salary,
+@@ -143,7 +139,6 @@ INSERT INTO JOB_POSTINGS (
+   (
+     3,
+     'North Wind Systems',
+-    'DevOps Engineer (AWS)',
+     'Improve CI/CD pipelines and cloud infrastructure reliability.',
+     5500000,
+     8500000,
+@@ -154,7 +149,6 @@ INSERT INTO JOB_POSTINGS (
+   (
+     4,
+     'Insight Works',
+-    'Data Analyst',
+     'Analyze product and marketing data, design KPI dashboards, and improve decision making.',
+     4800000,
+     7200000,
+@@ -172,12 +166,12 @@ INSERT INTO JOB_POSTING_JOB_TYPES (job_posting_id, job_type_id) VALUES
+   (4, 4)
+ ON CONFLICT (job_posting_id, job_type_id) DO NOTHING;
+ 
+-INSERT INTO JOB_SEEKERS (job_seeker_id, age, gender, desired_position, created_at, updated_at) VALUES
+-  (1, 28, 'male', 'Backend Engineer', NOW(), NOW()),
+-  (2, 31, 'female', 'Frontend Engineer', NOW(), NOW()),
+-  (3, 26, 'other', 'Data Analyst', NOW(), NOW()),
+-  (4, 34, 'male', 'DevOps Engineer', NOW(), NOW()),
+-  (5, 29, 'female', 'Data Analyst', NOW(), NOW())
++INSERT INTO JOB_SEEKERS (job_seeker_id, age, gender, created_at, updated_at) VALUES
++  (1, 28, 'male', NOW(), NOW()),
++  (2, 31, 'female', NOW(), NOW()),
++  (3, 26, 'other', NOW(), NOW()),
++  (4, 34, 'male', NOW(), NOW()),
++  (5, 29, 'female', NOW(), NOW())
+ ON CONFLICT (job_seeker_id) DO NOTHING;
+ 
+ INSERT INTO JOB_SEEKER_JOB_TYPES (job_seeker_id, job_type_id) VALUES
+@@ -374,7 +368,6 @@ ON CONFLICT (employee_id) DO NOTHING;
+ INSERT INTO JOB_POSTINGS (
+   job_posting_id,
+   company_name,
+-  job_title,
+   job_description,
+   min_salary,
+   max_salary,
+@@ -385,7 +378,6 @@ INSERT INTO JOB_POSTINGS (
+   (
+     10,
+     'Cedar Labs',
+-    'Platform Engineer',
+     'Build internal platforms and improve service reliability.',
+     6200000,
+     9000000,
+@@ -396,7 +388,6 @@ INSERT INTO JOB_POSTINGS (
+   (
+     11,
+     'Orbit Commerce',
+-    'Frontend Engineer (Vue + TS)',
+     'Develop customer-facing storefront and internal CMS.',
+     5000000,
+     7600000,
+@@ -407,7 +398,6 @@ INSERT INTO JOB_POSTINGS (
+   (
+     12,
+     'River Analytics',
+-    'Data Engineer',
+     'Design and operate data pipelines for analytics and ML.',
+     5800000,
+     8200000,
+@@ -418,7 +408,6 @@ INSERT INTO JOB_POSTINGS (
+   (
+     13,
+     'Lighthouse Security',
+-    'Security Engineer',
+     'Lead secure SDLC and cloud security improvements.',
+     6500000,
+     9800000,
+@@ -436,13 +425,13 @@ INSERT INTO JOB_POSTING_JOB_TYPES (job_posting_id, job_type_id) VALUES
+   (13, 3)
+ ON CONFLICT (job_posting_id, job_type_id) DO NOTHING;
+ 
+-INSERT INTO JOB_SEEKERS (job_seeker_id, age, gender, desired_position, created_at, updated_at) VALUES
+-  (10, 24, 'female', 'Frontend Engineer', NOW() - INTERVAL '60 days', NOW() - INTERVAL '5 days'),
+-  (11, 27, 'male', 'Platform Engineer', NOW() - INTERVAL '75 days', NOW() - INTERVAL '6 days'),
+-  (12, 33, 'female', 'Data Engineer', NOW() - INTERVAL '55 days', NOW() - INTERVAL '4 days'),
+-  (13, 38, 'male', 'Security Engineer', NOW() - INTERVAL '85 days', NOW() - INTERVAL '9 days'),
+-  (14, 29, 'other', 'Backend Engineer', NOW() - INTERVAL '65 days', NOW() - INTERVAL '2 days'),
+-  (15, 41, 'female', 'DevOps Engineer', NOW() - INTERVAL '90 days', NOW() - INTERVAL '10 days')
++INSERT INTO JOB_SEEKERS (job_seeker_id, age, gender, created_at, updated_at) VALUES
++  (10, 24, 'female', NOW() - INTERVAL '60 days', NOW() - INTERVAL '5 days'),
++  (11, 27, 'male', NOW() - INTERVAL '75 days', NOW() - INTERVAL '6 days'),
++  (12, 33, 'female', NOW() - INTERVAL '55 days', NOW() - INTERVAL '4 days'),
++  (13, 38, 'male', NOW() - INTERVAL '85 days', NOW() - INTERVAL '9 days'),
++  (14, 29, 'other', NOW() - INTERVAL '65 days', NOW() - INTERVAL '2 days'),
++  (15, 41, 'female', NOW() - INTERVAL '90 days', NOW() - INTERVAL '10 days')
+ ON CONFLICT (job_seeker_id) DO NOTHING;
+ 
+ INSERT INTO JOB_SEEKER_JOB_TYPES (job_seeker_id, job_type_id) VALUES
+diff --git a/ScoutDX_template/frontend/src/api/aiApi.ts b/ScoutDX_template/frontend/src/api/aiApi.ts
+deleted file mode 100644
+index 0de7043..0000000
+--- a/ScoutDX_template/frontend/src/api/aiApi.ts
++++ /dev/null
+@@ -1,7 +0,0 @@
+-import type { GeneratedScoutSample } from '../type/scout'
+-import { apiClient } from './client'
+-
+-export async function fetchGeneratedScoutSample(): Promise<GeneratedScoutSample> {
+-  const { data } = await apiClient.get<GeneratedScoutSample>('/api/ai/generate')
+-  return data
+-}
+diff --git a/ScoutDX_template/frontend/src/type/scout.ts b/ScoutDX_template/frontend/src/type/scout.ts
+index 21ca32c..ae750af 100644
+--- a/ScoutDX_template/frontend/src/type/scout.ts
++++ b/ScoutDX_template/frontend/src/type/scout.ts
+@@ -8,7 +8,7 @@ export interface ScoutEntity {
+   body: string
+   status?: string
+   company_name?: string
+-  job_title?: string
++  job_types?: string
+   job_seeker_age?: number | null
+   job_seeker_gender?: string | null
+   updated_by_name?: string
+diff --git a/ScoutDX_template/frontend/src/views/scout/ScoutCreate.vue b/ScoutDX_template/frontend/src/views/scout/ScoutCreate.vue
+index e451130..2293815 100644
+--- a/ScoutDX_template/frontend/src/views/scout/ScoutCreate.vue
++++ b/ScoutDX_template/frontend/src/views/scout/ScoutCreate.vue
+@@ -222,7 +222,7 @@
+ 
+           <!-- 人物像（AI指示） -->
+           <div class="form-group">
+-            <label for="aiInstructions" class="form-label">人物像</label>
++            <label for="aiInstructions" class="form-label">AI指示</label>
+             <textarea
+               id="aiInstructions"
+               v-model="applicantInfo.aiInstructions"
+@@ -230,7 +230,7 @@
+               :class="{ 'is-error': errors.aiInstructions }"
+               maxlength="2000"
+               rows="4"
+-              placeholder="求職者の人物像を入力"
++              placeholder="AIへの追加指示があれば入力してください"
+             />
+             <span v-if="errors.aiInstructions" class="error-message">
+               {{ errors.aiInstructions }}
+diff --git a/ScoutDX_template/frontend/src/views/scout/ScoutDetail.vue b/ScoutDX_template/frontend/src/views/scout/ScoutDetail.vue
+index 3844fe5..f779a4c 100644
+--- a/ScoutDX_template/frontend/src/views/scout/ScoutDetail.vue
++++ b/ScoutDX_template/frontend/src/views/scout/ScoutDetail.vue
+@@ -111,12 +111,11 @@ onMounted(async () => {
+     const candidateInfo = [
+       `年齢: ${scout.candidate_age ?? '-'}`,
+       `性別: ${toGenderLabel(scout.candidate_gender)}`,
+-      `希望職種: ${toDisplayValue(scout.candidate_desired_position)}`,
+     ].join(' / ')
+ 
+     const jobInfo = [
+       `会社名: ${toDisplayValue(scout.company_name)}`,
+-      `職種名: ${toDisplayValue(scout.job_title)}`,
++      `職種: ${toDisplayValue(scout.job_types)}`,
+       `仕事内容: ${toDisplayValue(scout.job_description)}`,
+       `最低年収: ${scout.min_salary ?? '-'}`,
+       `最高年収: ${scout.max_salary ?? '-'}`,
+diff --git a/ScoutDX_template/frontend/src/views/scout/ScoutList.vue b/ScoutDX_template/frontend/src/views/scout/ScoutList.vue
+index 36ccb12..628d93c 100644
+--- a/ScoutDX_template/frontend/src/views/scout/ScoutList.vue
++++ b/ScoutDX_template/frontend/src/views/scout/ScoutList.vue
+@@ -4,6 +4,9 @@
+       <div class="title">
+         スカウト文一覧（表示件数: {{ filteredScouts.length }}件）
+       </div>
++      <div class="footer" v-if="role === 'sales'">
++        <button class="create-btn" @click="goCreate">新規作成</button>
++      </div>
+ 
+       <table class="table">
+         <thead>
+@@ -28,10 +31,6 @@
+           />
+         </tbody>
+       </table>
+-
+-      <div class="footer" v-if="role === 'sales'">
+-        <button class="create-btn" @click="goCreate">新規作成</button>
+-      </div>
+     </div>
+ 
+     <div class="sidebar">
+@@ -359,7 +358,7 @@ export default {
+           id: row.id,
+           creator: row.creator || "",
+           company: row.company_name || "-",
+-          job: row.job_title || "-",
++          job: row.job_types || "-",
+           status: row.status,
+           statusLabel: STATUS_MAP[row.status] || "-",
+           job_seeker_age: row.job_seeker_age ?? null,
+-- 
+2.53.0
+
