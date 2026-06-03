@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS MAX_TEXT_LENGTH (
 CREATE TABLE IF NOT EXISTS JOB_POSTINGS (
   job_posting_id SERIAL PRIMARY KEY,
   company_name VARCHAR(150) NOT NULL,
-  job_title VARCHAR(140) NOT NULL,
   job_description TEXT,
   min_salary INTEGER,
   max_salary INTEGER,
@@ -45,7 +44,6 @@ CREATE TABLE IF NOT EXISTS JOB_SEEKERS (
   job_seeker_id SERIAL PRIMARY KEY,
   age INTEGER NOT NULL,
   gender VARCHAR(20) NOT NULL,
-  desired_position VARCHAR(100),
   created_at TIMESTAMP,
   updated_at TIMESTAMP
 );
